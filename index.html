@@ -2022,7 +2022,14 @@ function openStall(id) {
   show('order');
   $('orderTitle').textContent = s.name;
   let st = statusInfo(s);
-  $('orderStatus').textContent = st[0];
+  let timeStr = '';
+  if (s.order?.startTime) {
+    let diffMs = Date.now() - s.order.startTime;
+    let h = Math.floor(diffMs / 3600000);
+    let m = Math.floor((diffMs % 3600000) / 60000);
+    timeStr = ` · 🕒 Ngồi ${h > 0 ? h + 'h ' : ''}${m}p`;
+  }
+  $('orderStatus').textContent = st[0] + timeStr;
   $('orderStatus').className = 'badge ' + st[2];
 
   $('customerOrder').value = s.order.customer || '';
@@ -2083,10 +2090,10 @@ function autoSaveOrderMeta() {
   s.order = s.order || {};
   s.order.customer = $('customerOrder')?.value.trim() || '';
   s.order.note = $('orderNote')?.value || '';
-  s.order.deposit = +$('depositOrder')?.value || 0;
-  s.order.advance = +$('advanceOrder')?.value || 0;
-  s.order.discount = +$('discount')?.value || 0;
-  s.order.rentAmount = +$('rentAmount')?.value || 0;
+  s.order.deposit = Math.max(0, +$('depositOrder')?.value || 0);
+  s.order.advance = Math.max(0, +$('advanceOrder')?.value || 0);
+  s.order.discount = Math.max(0, +$('discount')?.value || 0);
+  s.order.rentAmount = Math.max(0, +$('rentAmount')?.value || 0);
   s.order.pay = $('pay')?.value || 'Chuyển khoản';
   let cm = $('customerMini');
   if (cm) {
@@ -2235,14 +2242,16 @@ function renderCart() {
 function saveOpenOrder() {
   let s = stall(currentStall);
   if (!s) return;
+  s.order = s.order || {};
   s.order.customer = $('customerOrder').value.trim();
-  s.order.deposit = +$('depositOrder').value || 0;
-  s.order.advance = +$('advanceOrder').value || 0;
+  s.order.deposit = Math.max(0, +$('depositOrder').value || 0);
+  s.order.advance = Math.max(0, +$('advanceOrder').value || 0);
   s.order.note = $('orderNote').value;
   s.order.pay = $('pay').value;
-  s.order.discount = +$('discount').value || 0;
+  s.order.discount = Math.max(0, +$('discount').value || 0);
   s.order.rentChoice = $('rentChoice').value;
-  s.order.rentAmount = +$('rentAmount').value || 0;
+  s.order.rentAmount = Math.max(0, +$('rentAmount').value || 0);
+  if (!s.order.startTime) s.order.startTime = Date.now();
   if (s.status === 'empty') s.status = 'using';
   save();
   show('home');
@@ -2612,6 +2621,7 @@ function toggleCheckoutQR(splitCount = 1, customAmount = null) {
   const box = $('checkoutQRBox');
   if (payType === 'Chuyển khoản' || payType === 'Kết hợp') {
     let s = stall(currentStall);
+    if (!s) return;
     let t = orderTotals(s);
     let rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
     let dis = Math.max(0, +$('discount').value || 0);
@@ -2688,7 +2698,7 @@ function finalizeCheckout() {
 
   let items = Object.entries(s.order.items).map(([id, q]) => {
     let p = prod(id);
-    return { id: p.id, name: p.name, unit: p.unit, qty: q, price: p.price };
+    return { id: p?.id || id, name: p?.name || 'Món đã xóa', unit: p?.unit || 'phần', qty: +q || 0, price: +(p?.price || 0) };
   });
 
   let b = {
@@ -2917,14 +2927,54 @@ function renderFridgeTable() {
   `;
 }
 
+function updateFridgeSummary(day) {
+  day = day || dateKey();
+  const drinks = db.products.filter(p => (p.category || '') === 'uong');
+  const todayBills = db.bills.filter(b => b.date === day);
+  const soldMap = {};
+  todayBills.forEach(b => {
+    b.items.forEach(i => {
+      soldMap[i.id] = (soldMap[i.id] || 0) + (+i.qty || 0);
+    });
+  });
+  const dayData = db.drinkInventory[day] || {};
+  let totalLossMoney = 0;
+  let hasLoss = false;
+
+  drinks.forEach(p => {
+    const sold = soldMap[p.id] || 0;
+    const start = dayData[p.id]?.start ?? '';
+    const actual = dayData[p.id]?.actual ?? '';
+    let expected = start !== '' ? Math.max(0, (+start || 0) - sold) : '';
+    let diff = (actual !== '' && expected !== '') ? (+actual - expected) : null;
+    if (diff !== null && diff < 0) {
+      hasLoss = true;
+      totalLossMoney += Math.abs(diff) * p.price;
+    }
+  });
+
+  const box = $('fridgeSummaryBox');
+  if (box) {
+    box.innerHTML = hasLoss ? `
+      <div style="font-size:12px;color:#b91c1c;font-weight:750">
+        ⚠️ Phát hiện hụt đồ uống so với hóa đơn bán ra! Tổng tiền thất thoát: <b>${money(totalLossMoney)}</b>
+      </div>
+    ` : `
+      <div style="font-size:12px;color:var(--primary);font-weight:700">
+        ✅ Số lượng đồ uống trong tủ lạnh khớp với hóa đơn bán hàng!
+      </div>
+    `;
+  }
+}
+
 function calculateFridgeRow(pid) {
   const day = dateKey();
   db.drinkInventory[day] = db.drinkInventory[day] || {};
   const p = prod(pid);
   if (!p) return;
 
-  const startVal = $('fridge_start_' + pid)?.value;
-  const actVal = $('fridge_act_' + pid)?.value;
+  const startVal = $('fridge_start_' + pid)?.value ?? '';
+  const actVal = $('fridge_act_' + pid)?.value ?? '';
 
   db.drinkInventory[day][pid] = {
     start: startVal !== '' ? +startVal : '',
@@ -2932,7 +2982,38 @@ function calculateFridgeRow(pid) {
   };
 
   save();
-  renderFridgeTable();
+
+  const todayBills = db.bills.filter(b => b.date === day);
+  let sold = 0;
+  todayBills.forEach(b => {
+    b.items.forEach(i => {
+      if (i.id === pid) sold += (+i.qty || 0);
+    });
+  });
+
+  let expected = startVal !== '' ? Math.max(0, (+startVal || 0) - sold) : '';
+  let diff = (actVal !== '' && expected !== '') ? (+actVal - expected) : null;
+
+  const expEl = $('fridge_exp_' + pid);
+  if (expEl) expEl.textContent = expected !== '' ? expected : '—';
+
+  const diffEl = $('fridge_diff_' + pid);
+  if (diffEl) {
+    if (diff !== null) {
+      if (diff === 0) {
+        diffEl.innerHTML = '<span style="color:var(--primary);font-weight:750">✓ Khớp</span>';
+      } else if (diff < 0) {
+        const lossVal = Math.abs(diff) * p.price;
+        diffEl.innerHTML = `<span style="color:#b91c1c;font-weight:800">Hụt ${Math.abs(diff)} (-${money(lossVal)})</span>`;
+      } else {
+        diffEl.innerHTML = `<span style="color:#d97706;font-weight:750">Thừa ${diff}</span>`;
+      }
+    } else {
+      diffEl.innerHTML = '—';
+    }
+  }
+
+  updateFridgeSummary(day);
 }
 
 function saveFridgeInventory() {
@@ -3221,7 +3302,7 @@ function updateSplitView(due) {
   const bank = db.settings.bank || 'MB';
   const acc = db.settings.account || '0906068198';
   const owner = db.settings.owner || 'THAC DE';
-  const memo = `THACDE ${s.name.replace(/\s+/g, '')} CHIA${count}`;
+  const memo = `THACDE ${s ? s.name.replace(/\s+/g, '') : ''} CHIA${count}`;
   
   const qrUrl = `https://img.vietqr.io/image/${bank}-${acc}-compact2.png?amount=${perPerson}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(owner)}`;
   img.src = qrUrl;
