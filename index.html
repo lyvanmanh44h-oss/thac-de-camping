@@ -1053,17 +1053,8 @@
       </div>
     </div>
 
-    <!-- Quick 1-Touch Bar (Tối giản 1 hàng ngang, siêu gọn gàng) -->
-    <div class="quick-scroll-bar">
-      <button type="button" class="quick-pill" onclick="quickAddDrink('p8')">🍺 +1 Bia HN</button>
-      <button type="button" class="quick-pill" onclick="quickAddDrink('p9')">💧 +1 Suối</button>
-      <button type="button" class="quick-pill" onclick="quickAddDrink('p_da')">🧊 +1 Xô đá</button>
-      <button type="button" class="quick-pill" onclick="quickAddDrink('p_redbull')">⚡ +1 Bò Húc</button>
-      <button type="button" class="quick-pill blue" onclick="quickAddAdvancePrompt()">🛵 + Chi hộ xe ôm</button>
-      <button type="button" class="quick-pill amber" onclick="quickAddDrink('p_bep')">🔥 + Bếp than</button>
-      <button type="button" class="quick-pill amber" onclick="quickAddDrink('p_than')">🪵 + Than thêm</button>
-      <button type="button" class="quick-pill" onclick="quickAddDrink('p_phuthu')">🍱 + Đồ ngoài</button>
-    </div>
+    <!-- Quick 1-Touch Bar (Tối giản 1 hàng ngang, tự do sửa tên & giá) -->
+    <div id="quickBarContainer" class="quick-scroll-bar"></div>
 
     <!-- Product Category Tabs & Search -->
     <div class="product-search-wrap" style="margin-top:10px">
@@ -2164,7 +2155,7 @@ function openStall(id) {
 
   renderProductPicker();
   renderCart();
-  renderQuickChipsBar();
+  renderQuickBar();
 }
 
 function filterCategory(cat, btn) {
@@ -5050,10 +5041,293 @@ function resetToEmptySelling() {
   alert('Đã đưa tất cả sạp về TRỐNG sẵn sàng đón khách thật!');
 }
 
+
+// ==================== CUSTOMIZABLE QUICK BAR ENGINE ====================
+const DEFAULT_QUICK_BAR = [
+  { id: 'p8', name: 'Bia HN', icon: '🍺' },
+  { id: 'p9', name: 'Suối', icon: '💧' },
+  { id: 'p_da', name: 'Xô đá', icon: '🧊' },
+  { id: 'p_redbull', name: 'Bò Húc', icon: '⚡' },
+  { isAdvance: true, name: 'Chi xe ôm', icon: '🛵' },
+  { id: 'p_bep', name: 'Bếp than', icon: '🔥' },
+  { id: 'p_than', name: 'Than thêm', icon: '🪵' },
+  { id: 'p_phuthu', name: 'Đồ ngoài', icon: '🍱' }
+];
+
+let editingQuickIndex = -1;
+let isAddingNewQuickItem = false;
+
+function initQuickBar() {
+  db.quickBar = db.quickBar || JSON.parse(JSON.stringify(DEFAULT_QUICK_BAR));
+}
+
+function renderQuickBar() {
+  initQuickBar();
+  const container = $('quickBarContainer');
+  if (!container) return;
+
+  let html = db.quickBar.map((item, idx) => {
+    if (item.isAdvance) {
+      return `<button type="button" class="quick-pill blue" onclick="quickAddAdvancePrompt()" title="Bấm để chi hộ xe ôm (hoặc nhấn giữ để sửa)">
+        ${item.icon || '🛵'} + ${esc(item.name || 'Chi xe ôm')}
+      </button>`;
+    }
+    let p = prod(item.id);
+    if (!p) {
+      let ep = DEFAULT_EXTRA_PRODUCTS.find(x => x.id === item.id);
+      if (ep) { db.products.push(ep); save(); p = ep; }
+    }
+    const displayName = item.name || p?.name || 'Món';
+    const displayPrice = p ? (p.price >= 1000 ? Math.round(p.price / 1000) + 'k' : p.price + 'đ') : '';
+    const displayIcon = item.icon || p?.icon || '⚡';
+    
+    return `<button type="button" class="quick-pill" onclick="quickAddDrink('${item.id}')" title="Bấm để thêm ${esc(displayName)} (hoặc bấm ⚙️ Sửa nút)">
+      ${displayIcon} + ${esc(displayName)} <span style="font-size:11px;opacity:0.75;font-weight:700">(${displayPrice})</span>
+    </button>`;
+  }).join('');
+
+  html += `<button type="button" class="quick-pill" onclick="openQuickBarSettings()" style="background:#f1f5f9;color:var(--primary);border:1.5px dashed var(--primary-border);padding:7px 11px" title="Sửa tên, giá hoặc thêm phím bắn nhanh">
+    ⚙️ Sửa nút
+  </button>`;
+
+  container.innerHTML = html;
+}
+
+function openQuickBarSettings() {
+  initQuickBar();
+  const listEl = $('quickBarItemsList');
+  if (!listEl) return;
+
+  listEl.innerHTML = db.quickBar.map((item, idx) => {
+    if (item.isAdvance) {
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#eff6ff;padding:8px 10px;border-radius:10px;border:1px solid #bfdbfe">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">${item.icon || '🛵'}</span>
+            <div>
+              <b style="font-size:13px;color:#1e40af">${esc(item.name || 'Chi xe ôm')}</b>
+              <div style="font-size:11px;color:#64748b">Tính năng đặc biệt: Chi hộ cước xe ôm/thuyền</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="openEditQuickItem(${idx})">✏️ Sửa</button>
+            <button type="button" class="btn secondary" style="padding:4px 8px;font-size:12px;color:#dc2626" onclick="deleteQuickItem(${idx})">🗑️</button>
+          </div>
+        </div>`;
+    }
+
+    let p = prod(item.id);
+    if (!p) {
+      let ep = DEFAULT_EXTRA_PRODUCTS.find(x => x.id === item.id);
+      if (ep) { db.products.push(ep); save(); p = ep; }
+    }
+    const name = item.name || p?.name || 'Món';
+    const price = p?.price || 0;
+    const icon = item.icon || p?.icon || '⚡';
+    const unit = p?.unit || 'phần';
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#f8fafc;padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">${icon}</span>
+          <div>
+            <b style="font-size:13px">${esc(name)}</b>
+            <div style="font-size:11px;color:var(--primary);font-weight:750">${money(price)} / ${esc(unit)}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button type="button" class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="openEditQuickItem(${idx})">✏️ Sửa giá/tên</button>
+          <button type="button" class="btn secondary" style="padding:4px 8px;font-size:12px;color:#dc2626" onclick="deleteQuickItem(${idx})">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  $('quickBarSettingsModal').style.display = 'flex';
+}
+
+function openEditQuickItem(idx) {
+  initQuickBar();
+  editingQuickIndex = idx;
+  isAddingNewQuickItem = false;
+  const item = db.quickBar[idx];
+  if (!item) return;
+
+  $('quickEditModalTitle').textContent = `✏️ Sửa Nút: ${item.name || 'Phím bắn'}`;
+  $('qbItemIcon').value = item.icon || '🍺';
+  $('qbItemName').value = item.name || '';
+
+  if (item.isAdvance) {
+    $('qbPriceWrap').style.display = 'none';
+    $('qbUnitWrap').style.display = 'none';
+  } else {
+    $('qbPriceWrap').style.display = 'block';
+    $('qbUnitWrap').style.display = 'block';
+    let p = prod(item.id);
+    $('qbItemPrice').value = p?.price ?? 0;
+    $('qbItemUnit').value = p?.unit || 'lon';
+  }
+
+  $('quickBarEditItemModal').style.display = 'flex';
+}
+
+function openAddQuickItemModal() {
+  editingQuickIndex = -1;
+  isAddingNewQuickItem = true;
+  $('quickEditModalTitle').textContent = '+ Thêm Phím Bắn Nhanh Mới';
+  $('qbItemIcon').value = '⚡';
+  $('qbItemName').value = '';
+  $('qbItemPrice').value = '20000';
+  $('qbItemUnit').value = 'lon';
+  $('qbPriceWrap').style.display = 'block';
+  $('qbUnitWrap').style.display = 'block';
+  $('quickBarEditItemModal').style.display = 'flex';
+}
+
+function saveQuickItemEdit() {
+  const icon = $('qbItemIcon').value.trim() || '⚡';
+  const name = $('qbItemName').value.trim();
+  if (!name) return alert('Vui lòng nhập tên món/dịch vụ.');
+
+  if (isAddingNewQuickItem) {
+    const price = Math.max(0, parseInt($('qbItemPrice').value, 10) || 0);
+    const unit = $('qbItemUnit').value.trim() || 'phần';
+    const newId = 'p_custom_' + Date.now();
+    
+    // Add product to catalog
+    db.products.push({
+      id: newId,
+      name,
+      price,
+      unit,
+      icon,
+      category: 'uong',
+      image: ''
+    });
+
+    // Add to quickBar
+    db.quickBar.push({
+      id: newId,
+      name,
+      icon
+    });
+
+    save();
+    closeM('quickBarEditItemModal');
+    openQuickBarSettings();
+    renderQuickBar();
+    renderProductPicker();
+    showToast(`✓ Đã tạo thêm phím: ${icon} ${name} (${money(price)})`);
+    return;
+  }
+
+  // Editing existing item
+  const item = db.quickBar[editingQuickIndex];
+  if (!item) return;
+
+  item.icon = icon;
+  item.name = name;
+
+  if (!item.isAdvance) {
+    const price = Math.max(0, parseInt($('qbItemPrice').value, 10) || 0);
+    const unit = $('qbItemUnit').value.trim() || 'phần';
+    let p = prod(item.id);
+    if (p) {
+      p.name = name;
+      p.price = price;
+      p.unit = unit;
+      p.icon = icon;
+    }
+  }
+
+  save();
+  closeM('quickBarEditItemModal');
+  openQuickBarSettings();
+  renderQuickBar();
+  renderProductPicker();
+  renderCart();
+  showToast(`✓ Đã cập nhật phím: ${icon} ${name}`);
+}
+
+function deleteQuickItem(idx) {
+  initQuickBar();
+  const item = db.quickBar[idx];
+  if (!item) return;
+  if (!confirm(`Xóa phím "${item.name || 'Món'}" khỏi thanh bắn nhanh?`)) return;
+  db.quickBar.splice(idx, 1);
+  save();
+  openQuickBarSettings();
+  renderQuickBar();
+  showToast('Đã xóa phím');
+}
+
+function resetQuickBarToDefault() {
+  if (!confirm('Khôi phục danh sách phím bắn nhanh về mặc định ban đầu?')) return;
+  db.quickBar = JSON.parse(JSON.stringify(DEFAULT_QUICK_BAR));
+  save();
+  openQuickBarSettings();
+  renderQuickBar();
+  showToast('Đã khôi phục phím mặc định');
+}
+
 </script>
   <div id="toastUndo" style="display:none;position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.3);z-index:9999;align-items:center;gap:10px;font-size:13px">
     <span id="toastMsg">Thông báo</span>
     <button id="toastBtn" class="btn green" style="padding:4px 8px;font-size:11px">Hoàn tác</button>
   </div>
+
+  <!-- MODAL: CÀI ĐẶT & CHỈNH SỬA PHÍM BẮN NHANH -->
+  <div id="quickBarSettingsModal" class="modal">
+    <div class="card wide" style="max-width:460px;max-height:85vh;display:flex;flex-direction:column">
+      <div class="titlebar">
+        <div>
+          <div class="title" style="font-size:16px">⚙️ Cài Đặt Phím Bắn Nhanh</div>
+          <div style="font-size:11px;color:var(--muted)">Tùy chỉnh tên, giá bán và thêm bớt nút theo ý bạn</div>
+        </div>
+        <button class="btn secondary" onclick="closeM('quickBarSettingsModal')">✕ Đóng</button>
+      </div>
+      
+      <div id="quickBarItemsList" style="flex:1;overflow-y:auto;padding:8px 0;display:flex;flex-direction:column;gap:8px;margin:8px 0"></div>
+
+      <div style="display:flex;gap:8px;padding-top:8px;border-top:1px solid #e2e8f0">
+        <button type="button" class="btn primary full" onclick="openAddQuickItemModal()">+ Thêm nút mới</button>
+        <button type="button" class="btn secondary" onclick="resetQuickBarToDefault()">Mặc định</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SỬA 1 PHÍM CỤ THỂ -->
+  <div id="quickBarEditItemModal" class="modal">
+    <div class="card" style="max-width:380px">
+      <div class="titlebar">
+        <div class="title" style="font-size:15px" id="quickEditModalTitle">✏️ Sửa Phím Bắn Nhanh</div>
+        <button class="btn secondary" onclick="closeM('quickBarEditItemModal')">✕</button>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <div>
+          <label style="font-size:11px;font-weight:750;color:var(--muted)">Icon biểu tượng:</label>
+          <input id="qbItemIcon" style="font-size:18px;text-align:center;width:60px" placeholder="🍺">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:750;color:var(--muted)">Tên hiển thị trên nút:</label>
+          <input id="qbItemName" placeholder="VD: Bia Tiger Bạc, Xô đá...">
+        </div>
+        <div id="qbPriceWrap">
+          <label style="font-size:11px;font-weight:750;color:var(--muted)">Giá bán (₫):</label>
+          <input id="qbItemPrice" type="number" placeholder="22000">
+        </div>
+        <div id="qbUnitWrap">
+          <label style="font-size:11px;font-weight:750;color:var(--muted)">Đơn vị tính:</label>
+          <input id="qbItemUnit" placeholder="lon, chai, xô, chiếc...">
+        </div>
+        
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button type="button" class="btn primary full" onclick="saveQuickItemEdit()">💾 Lưu Thay Đổi</button>
+          <button type="button" class="btn secondary" onclick="closeM('quickBarEditItemModal')">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
