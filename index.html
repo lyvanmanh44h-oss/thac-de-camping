@@ -506,6 +506,111 @@
       transition: all 0.15s ease;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+    .quick-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 6px 10px;
+      gap: 8px;
+    }
+    .quick-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 750;
+      color: #334155;
+      min-width: 140px;
+    }
+    .quick-count {
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 12px;
+      background: #e2e8f0;
+      color: #475569;
+    }
+    .quick-count.has-qty {
+      background: #fef08a;
+      color: #854d0e;
+      font-weight: 800;
+    }
+    .quick-count.has-qty-blue {
+      background: #dbeafe;
+      color: #1e40af;
+      font-weight: 800;
+    }
+    .quick-count.has-qty-green {
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 800;
+    }
+    .quick-actions {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn-chip {
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #0f172a;
+      cursor: pointer;
+      min-width: 34px;
+      text-align: center;
+      transition: all 0.12s;
+    }
+    .btn-chip:active {
+      transform: scale(0.94);
+      background: #e2e8f0;
+    }
+    .btn-chip.highlight {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+    .btn-chip.sub {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+    .btn-chip.blue {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+    .btn-chip.green {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #166534;
+    }
+
+    /* Sticky Bottom Checkout Bar */
+    .sticky-order-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 680px;
+      margin: 0 auto;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(10px);
+      padding: 10px 14px 12px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 999;
+      box-shadow: 0 -4px 18px rgba(0,0,0,0.22);
+      border-top: 1px solid rgba(255,255,255,0.18);
+    }
     .quick-chip-btn:hover {
       background: #f0fdf4;
       border-color: var(--primary);
@@ -986,22 +1091,7 @@
     </div>
 
     <!-- Quick 1-Touch Bar (Drinks & Services) -->
-    <div class="quick-add-wrap" style="background:#fff;padding:9px 12px;border-radius:12px;border:1px solid var(--border);margin-top:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:12px;font-weight:800;color:var(--primary)">⚡ BẮN NHANH 1-CHẠM (ĐỒ UỐNG & DỊCH VỤ):</span>
-        <span style="font-size:11px;color:var(--muted)">Chạm là cộng ngay vào đơn</span>
-      </div>
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p8')">🍺 +1 Bia HN</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p9')">💧 +1 Suối</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_da')">🧊 +1 Xô đá</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_redbull')">⚡ +1 Bò Húc</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddAdvancePrompt()">🛵 + Chi hộ xe ôm</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_phuthu')">🍱 + Phụ thu đồ ngoài</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_bep')">🔥 + Thuê bếp than</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_than')">🪵 + Than thêm</button>
-      </div>
-    </div>
+    <div id="quickChipsStation" class="quick-add-wrap" style="background:#fff;padding:10px 12px;border-radius:14px;border:1.5px solid var(--border);margin-top:10px;box-shadow:var(--shadow-sm)"></div>
 
     <!-- Product Category Tabs & Search -->
     <div class="product-search-wrap" style="margin-top:10px">
@@ -1059,6 +1149,22 @@
         <button class="btn secondary" onclick="saveOpenOrder()">💾 Lưu đơn</button>
         <button class="btn amber" onclick="openPrecheckModal()">🧾 Tạm tính</button>
         <button class="btn primary" onclick="openCheckoutConfirm()">⚡ Thanh toán</button>
+      </div>
+    </div>
+
+    <!-- Sticky Bottom Bar for Mobile Quick Checkout -->
+    <div id="stickyOrderBar" class="sticky-order-bar">
+      <div style="flex:1">
+        <div style="font-size:11px;color:rgba(255,255,255,0.85);font-weight:700">CÒN PHẢI THU (ĐÃ TRỪ CỌC)</div>
+        <div style="font-size:18px;font-weight:900;color:#fef08a" id="stickyDue">0 ₫</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="button" onclick="openPrecheckModal()" style="background:#f59e0b;color:#fff;border:0;border-radius:10px;padding:9px 13px;font-weight:800;font-size:13px;display:flex;align-items:center;gap:4px">
+          🧾 Tạm tính
+        </button>
+        <button type="button" onclick="openCheckoutConfirm()" style="background:#22c55e;color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:900;font-size:14px;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(34,197,94,0.4)">
+          ⚡ Thanh toán
+        </button>
       </div>
     </div>
   </section>
@@ -1835,6 +1941,8 @@ db.stalls = db.stalls || SEED.stalls;
 db.products = db.products || SEED.products;
 const DEFAULT_EXTRA_PRODUCTS = [
   {"id": "p_da", "name": "Xô đá lạnh", "unit": "xô", "price": 20000, "icon": "🧊", "category": "uong", "image": ""},
+  {"id": "p_tiger", "name": "Bia Tiger Bạc", "unit": "lon", "price": 22000, "icon": "🐯", "category": "uong", "image": ""},
+  {"id": "p_coca", "name": "Coca / Nước ngọt", "unit": "lon", "price": 15000, "icon": "🥤", "category": "uong", "image": ""},
   {"id": "p_redbull", "name": "Nước tăng lực Bò Húc", "unit": "lon", "price": 15000, "icon": "⚡", "category": "uong", "image": ""},
   {"id": "p_phuthu", "name": "Phụ thu mang đồ ngoài", "unit": "lượt", "price": 100000, "icon": "🍱", "category": "dich_vu", "image": ""},
   {"id": "p_bep", "name": "Thuê bếp nướng than", "unit": "chiếc", "price": 50000, "icon": "🔥", "category": "dich_vu", "image": ""},
@@ -1917,6 +2025,8 @@ function playKitchenChime() {
 function show(id, btn) {
   document.querySelectorAll('.page').forEach(x => x.classList.remove('on'));
   $(id).classList.add('on');
+  const stickyBar = $('stickyOrderBar');
+  if (stickyBar) stickyBar.style.display = (id === 'order') ? 'flex' : 'none';
   if (btn) {
     document.querySelectorAll('.nav button').forEach(x => x.classList.remove('on'));
     btn.classList.add('on');
@@ -2078,6 +2188,7 @@ function openStall(id) {
 
   renderProductPicker();
   renderCart();
+  renderQuickChipsBar();
 }
 
 function filterCategory(cat, btn) {
@@ -2136,7 +2247,26 @@ function autoSaveOrderMeta() {
   renderCart();
 }
 
-function quickAddDrink(id) {
+
+function showToast(msg) {
+  let t = $('appToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'appToast';
+    t.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.95);color:#fff;padding:10px 18px;border-radius:30px;font-size:12px;font-weight:750;z-index:99999;box-shadow:0 10px 25px rgba(0,0,0,0.3);pointer-events:none;transition:all 0.25s ease;opacity:0;display:flex;align-items:center;gap:6px';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(-10px)';
+  }, 2200);
+}
+
+function quickAddDrink(id, qty = 1) {
   let p = prod(id);
   if (!p) {
     let ep = DEFAULT_EXTRA_PRODUCTS.find(x => x.id === id);
@@ -2144,15 +2274,60 @@ function quickAddDrink(id) {
       db.products.push(ep);
       save();
     }
+    p = prod(id);
   }
-  addItem(id);
+  let s = stall(currentStall);
+  if (!s) return;
+  s.order = s.order || { items: {}, kitchen: {} };
+  s.order.items = s.order.items || {};
+  s.order.kitchen = s.order.kitchen || {};
+  if (!s.order.startTime) s.order.startTime = Date.now();
+
+  s.order.items[id] = (s.order.items[id] || 0) + qty;
+  let k = s.order.kitchen[id] || (s.order.kitchen[id] = { status: 'pending', served: 0, units: [] });
+  if (!Array.isArray(k.units)) k.units = [];
+  while (k.units.length < s.order.items[id]) k.units.push(false);
+  getKitchenState(s, id);
+
+  if (s.status === 'empty') s.status = 'using';
+  save();
+  renderCart();
+  renderQuickChipsBar();
+  playKitchenChime();
+  if (navigator.vibrate) navigator.vibrate(35);
+  showToast(`✓ +${qty} ${p?.name || 'món'} (Tổng: ${s.order.items[id]} ${p?.unit || ''})`);
+}
+
+function quickSubtractDrink(id, qty = 1) {
+  let s = stall(currentStall);
+  if (!s || !s.order?.items?.[id]) return;
+  qchg(id, -qty);
+  renderQuickChipsBar();
+  let p = prod(id);
+  showToast(`−${qty} ${p?.name || 'món'} (Còn: ${s.order?.items?.[id] || 0} ${p?.unit || ''})`);
+}
+
+function quickAddAdvance(amt) {
+  let s = stall(currentStall);
+  if (!s) return;
+  s.order = s.order || {};
+  let current = Math.max(0, +$('advanceOrder').value || +s.order.advance || 0);
+  let next = current + amt;
+  s.order.advance = next;
+  $('advanceOrder').value = next;
+  save();
+  renderCart();
+  renderQuickChipsBar();
+  playKitchenChime();
+  if (navigator.vibrate) navigator.vibrate(35);
+  showToast(`🛵 +${money(amt)} chi hộ xe ôm (Tổng: ${money(next)})`);
 }
 
 function quickAddAdvancePrompt() {
-  let curr = +$('advanceOrder').value || 0;
-  let val = prompt('Quán ứng tiền trả hộ Xe ôm / Thuyền / Vận chuyển cho khách (₫):\n(Khoản này sẽ cộng vào bill khách và tự hoàn về quỹ khi thanh toán)', curr ? String(curr + 50000) : '50000');
+  let curr = Math.max(0, +$('advanceOrder').value || 0);
+  let val = prompt('Quán ứng tiền trả hộ Xe ôm / Thuyền / Vận chuyển cho khách (₫):\n(Khoản này sẽ tự cộng vào bill khách để thu lại khi thanh toán)', curr ? String(curr + 50000) : '50000');
   if (val !== null && val.trim() !== '') {
-    let num = Math.max(0, +val || 0);
+    let num = Math.max(0, parseInt(val.replace(/[^0-9]/g, ''), 10) || 0);
     $('advanceOrder').value = num;
     let s = stall(currentStall);
     if (s) {
@@ -2161,8 +2336,148 @@ function quickAddAdvancePrompt() {
       save();
     }
     renderCart();
+    renderQuickChipsBar();
+    showToast(`🛵 Chi hộ xe ôm: ${money(num)}`);
   }
 }
+
+function quickAddDeposit(amt) {
+  let s = stall(currentStall);
+  if (!s) return;
+  s.order = s.order || {};
+  let current = Math.max(0, +$('depositOrder').value || +s.order.deposit || 0);
+  let next = current + amt;
+  s.order.deposit = next;
+  $('depositOrder').value = next;
+  save();
+  renderCart();
+  renderQuickChipsBar();
+  playKitchenChime();
+  if (navigator.vibrate) navigator.vibrate(35);
+  showToast(`💰 +${money(amt)} cọc tiền (Tổng cọc: ${money(next)})`);
+}
+
+function renderQuickChipsBar() {
+  const s = stall(currentStall);
+  const items = s?.order?.items || {};
+  const el = $('quickChipsStation');
+  if (!el) return;
+
+  const biaQty = items['p8'] || 0;
+  const suoiQty = items['p9'] || 0;
+  const daQty = items['p_da'] || 0;
+  const boHucQty = items['p_redbull'] || 0;
+  const tigerQty = items['p_tiger'] || 0;
+  const advAmt = Math.max(0, +$('advanceOrder')?.value || +s?.order?.advance || 0);
+  const depAmt = Math.max(0, +$('depositOrder')?.value || +s?.order?.deposit || 0);
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:5px">
+        <span>⚡ TRẠM BẮN BIA ĐÁ & DỊCH VỤ SIÊU TỐC</span>
+      </div>
+      <span style="font-size:11px;color:var(--muted)">1 chạm cộng ngay vào bill</span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:7px">
+      
+      <!-- Bia Hà Nội -->
+      <div class="quick-row">
+        <div class="quick-label">
+          <span>🍺 Bia Hà Nội (18k)</span>
+          <b class="quick-count ${biaQty > 0 ? 'has-qty' : ''}">${biaQty} lon</b>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p8', 1)">+1</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p8', 5)">+5</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p8', 10)">+10</button>
+          <button type="button" class="btn-chip highlight" onclick="quickAddDrink('p8', 24)">+Két 24</button>
+          ${biaQty > 0 ? `<button type="button" class="btn-chip sub" onclick="quickSubtractDrink('p8', 1)" title="Khách trả lại 1 lon">−1</button>` : ''}
+        </div>
+      </div>
+
+      <!-- Xô Đá Lạnh -->
+      <div class="quick-row">
+        <div class="quick-label">
+          <span>🧊 Xô đá lạnh (20k)</span>
+          <b class="quick-count ${daQty > 0 ? 'has-qty' : ''}">${daQty} xô</b>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p_da', 1)">+1</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p_da', 2)">+2</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p_da', 3)">+3</button>
+          ${daQty > 0 ? `<button type="button" class="btn-chip sub" onclick="quickSubtractDrink('p_da', 1)">−1</button>` : ''}
+        </div>
+      </div>
+
+      <!-- Nước Suối Lạnh -->
+      <div class="quick-row">
+        <div class="quick-label">
+          <span>💧 Nước suối (10k)</span>
+          <b class="quick-count ${suoiQty > 0 ? 'has-qty' : ''}">${suoiQty} chai</b>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p9', 1)">+1</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p9', 3)">+3</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p9', 6)">+6</button>
+          <button type="button" class="btn-chip highlight" onclick="quickAddDrink('p9', 12)">+Lốc 12</button>
+          ${suoiQty > 0 ? `<button type="button" class="btn-chip sub" onclick="quickSubtractDrink('p9', 1)">−1</button>` : ''}
+        </div>
+      </div>
+
+      <!-- Bò Húc & Nước Ngọt -->
+      <div class="quick-row">
+        <div class="quick-label">
+          <span>⚡ Bò húc / Nước ngọt</span>
+          <b class="quick-count ${boHucQty > 0 ? 'has-qty' : ''}">${boHucQty} lon</b>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p_redbull', 1)">+1 Bò Húc</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p_coca', 1)">+1 Coca</button>
+          <button type="button" class="btn-chip" onclick="quickAddDrink('p_tiger', 1)">+1 Tiger</button>
+        </div>
+      </div>
+
+      <!-- Xe Ôm Chi Hộ -->
+      <div class="quick-row" style="background:#eff6ff;border-color:#bfdbfe">
+        <div class="quick-label" style="color:#1e40af">
+          <span>🛵 Chi hộ xe ôm:</span>
+          <b class="quick-count ${advAmt > 0 ? 'has-qty-blue' : ''}">${money(advAmt)}</b>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-chip blue" onclick="quickAddAdvance(50000)">+50k</button>
+          <button type="button" class="btn-chip blue" onclick="quickAddAdvance(100000)">+100k</button>
+          <button type="button" class="btn-chip blue" onclick="quickAddAdvance(200000)">+200k</button>
+          <button type="button" class="btn-chip" onclick="quickAddAdvancePrompt()">Tùy gõ</button>
+        </div>
+      </div>
+
+      <!-- Tiền Cọc Đã Nhận -->
+      <div class="quick-row" style="background:#f0fdf4;border-color:#bbf7d0">
+        <div class="quick-label" style="color:#166534">
+          <span>💰 Cọc nhận trước:</span>
+          <b class="quick-count ${depAmt > 0 ? 'has-qty-green' : ''}">${money(depAmt)}</b>
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-chip green" onclick="quickAddDeposit(200000)">+200k</button>
+          <button type="button" class="btn-chip green" onclick="quickAddDeposit(500000)">+500k</button>
+          <button type="button" class="btn-chip green" onclick="quickAddDeposit(1000000)">+1tr</button>
+        </div>
+      </div>
+
+      <!-- Dịch vụ cắm trại phụ -->
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-top:4px">
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_bep', 1)">🔥 + Thuê bếp than (50k)</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_than', 1)">🪵 + Than thêm (20k)</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_phuthu', 1)">🍱 + Phụ thu đồ ngoài (100k)</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_sup', 1)">🏄 + Thuê SUP (50k)</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_loa', 1)">🎤 + Loa kéo (150k)</button>
+      </div>
+
+    </div>
+  `;
+}
+
 
 function addItem(id) {
   let s = stall(currentStall);
@@ -2204,6 +2519,7 @@ function qchg(id, d) {
   }
   save();
   renderCart();
+  renderQuickChipsBar();
   if ($('kitchen')?.classList.contains('on')) refreshKitchenViews(s.id);
 }
 
@@ -2265,6 +2581,8 @@ function renderCart() {
   $('adv').textContent = money(adv);
   $('lineAdvance').style.display = adv > 0 ? 'flex' : 'none';
   $('due').textContent = money(due);
+  const stickyDue = $('stickyDue');
+  if (stickyDue) stickyDue.textContent = money(due);
 }
 
 function saveOpenOrder() {
