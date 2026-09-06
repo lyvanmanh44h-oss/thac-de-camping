@@ -876,7 +876,10 @@
     <div class="brand-wrap">
       <span class="brand-icon">🏕️</span>
       <div>
-        <div class="brand-title">Thác Dê Camping</div>
+        <div class="brand-title" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span>Thác Dê Camping</span>
+          <span style="background:var(--primary);color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:800;letter-spacing:0.5px">V15 MASTER MỚI NHẤT</span>
+        </div>
         <div class="brand-subtitle">Quản lý sạp & ẩm thực</div>
       </div>
     </div>
@@ -900,6 +903,31 @@
 
   <!-- PAGE 1: HOME / SẠP -->
   <section id="home" class="page on">
+    <!-- V15 QUICK OPERATIONAL HUB & DEMO SUITE -->
+    <div style="background:linear-gradient(135deg, #14532d, #15803d);color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:var(--shadow-md);border:1px solid #16a34a">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px">
+          <span>⚡ BẢNG ĐIỀU KHIỂN V15 (MỚI NHẤT)</span>
+        </div>
+        <button type="button" onclick="forceRefreshNewVersion()" style="background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:4px 9px;border-radius:8px;font-size:11px;font-weight:750">🔄 Tải bản mới (Xóa Cache)</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button type="button" onclick="openFridgeModal()" style="background:#fff;color:var(--primary);border:0;border-radius:10px;padding:11px 8px;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 4px rgba(0,0,0,0.12)">
+          🧊 Kiểm Kê Tủ Lạnh
+        </button>
+        <button type="button" onclick="openCustomerDebtsModal()" style="background:#fff;color:#b91c1c;border:0;border-radius:10px;padding:11px 8px;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 4px rgba(0,0,0,0.12)">
+          📒 Sổ Nợ Khách Hàng
+        </button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button type="button" onclick="loadSimulationDemoData()" style="flex:1;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:8px;padding:8px 6px;font-size:11px;font-weight:800;cursor:pointer">
+          🧪 Nạp 10 Tình Huống Test Mẫu (Cọc, Xe ôm, Bia, Nợ...)
+        </button>
+        <button type="button" onclick="resetToEmptySelling()" style="background:rgba(255,255,255,0.15);color:#fff;border:0;border-radius:8px;padding:8px 8px;font-size:11px;font-weight:700;cursor:pointer">
+          🧹 Xóa trắng bán thật
+        </button>
+      </div>
+    </div>
     <!-- Hero Revenue Card -->
     <div class="hero">
       <div class="hero-label">Doanh thu hôm nay</div>
@@ -4653,6 +4681,192 @@ async function installPwaApp() {
   }
   alert('Để cài ứng dụng:\n- Trên Android (Chrome): Bấm ⋮ ở góc trên -> “Cài đặt ứng dụng” hoặc “Thêm vào màn hình chính”.\n- Trên iPhone (Safari): Bấm biểu tượng Chia sẻ (hộp mũi tên) -> “Thêm vào MH chính”.');
 }
+
+// ==================== V15 DEMO & CACHE MANAGERS ====================
+async function forceRefreshNewVersion() {
+  if (confirm('Làm mới ứng dụng để tải bản cập nhật mới nhất từ máy chủ?')) {
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch (e) {}
+    }
+    if (navigator.serviceWorker) {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (let r of regs) await r.unregister();
+      } catch (e) {}
+    }
+    location.reload(true);
+  }
+}
+
+function loadSimulationDemoData() {
+  const day = dateKey();
+  
+  // Ensure default products exist
+  DEFAULT_EXTRA_PRODUCTS.forEach(ep => {
+    if (!prod(ep.id)) db.products.push(ep);
+  });
+
+  // Setup Stall 1 (Active with deposit and advance)
+  let s1 = stall('s1') || db.stalls[0];
+  if (s1) {
+    s1.status = 'using';
+    s1.order = {
+      customer: 'Đoàn anh Tuấn (12 người)',
+      note: 'Mang trước 2 lon bia và xô đá, gà nướng ít cay',
+      deposit: 500000,
+      advance: 50000,
+      discount: 0,
+      pay: 'Chuyển khoản',
+      rentChoice: 'large',
+      rentAmount: 300000,
+      startTime: Date.now() - 5400000, // Sitting 1h30m
+      items: {
+        'p1': 1,      // Gà nướng
+        'p2': 1,      // Cá rô nướng
+        'p8': 6,      // 6 Bia Hà Nội
+        'p9': 4,      // 4 Suối
+        'p_da': 2,    // 2 Xô đá
+        'p_phuthu': 1,// Phụ thu đồ ngoài
+        'p_bep': 1    // Bếp than
+      },
+      kitchen: {
+        'p1': { status: 'served', served: 1, units: [true] },
+        'p2': { status: 'served', served: 1, units: [true] },
+        'p8': { status: 'served', served: 6, units: [true, true, true, true, true, true] },
+        'p9': { status: 'served', served: 4, units: [true, true, true, true] },
+        'p_da': { status: 'served', served: 2, units: [true, true] },
+        'p_phuthu': { status: 'served', served: 1, units: [true] },
+        'p_bep': { status: 'served', served: 1, units: [true] }
+      }
+    };
+  }
+
+  // Setup Stall 2 (Active with drinks)
+  let s2 = stall('s2') || db.stalls[1];
+  if (s2) {
+    s2.status = 'using';
+    s2.order = {
+      customer: 'Khách anh Hải (4 người)',
+      note: 'Ngồi ngắm thác uống bia',
+      deposit: 0,
+      advance: 0,
+      discount: 0,
+      pay: 'Tiền mặt',
+      rentChoice: 'small',
+      rentAmount: 200000,
+      startTime: Date.now() - 2700000, // Sitting 45m
+      items: {
+        'p8': 4,
+        'p9': 2,
+        'p_da': 1
+      },
+      kitchen: {
+        'p8': { status: 'served', served: 4, units: [true, true, true, true] },
+        'p9': { status: 'served', served: 2, units: [true, true] },
+        'p_da': { status: 'served', served: 1, units: [true] }
+      }
+    };
+  }
+
+  // Setup Bills History (1 paid bill, 1 debt bill)
+  db.bills = [
+    {
+      id: 'bill_demo_debt',
+      code: 'HD' + String(Date.now() - 3600000).slice(-7),
+      date: day,
+      time: '11:15',
+      stallId: 's4',
+      stallName: 'Sạp 04',
+      customer: 'Anh Tuấn (Công an huyện)',
+      phone: '0988 777 666',
+      items: [
+        { id: 'p1', name: 'Gà nướng mắc khén', unit: 'con', qty: 2, price: 350000 },
+        { id: 'p8', name: 'Bia Hà Nội', unit: 'lon', qty: 10, price: 18000 },
+        { id: 'p_da', name: 'Xô đá lạnh', unit: 'xô', qty: 3, price: 20000 },
+        { id: 'p_bep', name: 'Thuê bếp nướng than', unit: 'chiếc', qty: 1, price: 50000 }
+      ],
+      subtotal: 990000,
+      rent: 0,
+      advance: 0,
+      discount: 0,
+      deposit: 0,
+      revenue: 990000,
+      due: 990000,
+      refund: 0,
+      pay: 'Ghi nợ',
+      cashAmount: 0,
+      qrAmount: 0,
+      debtStatus: 'unpaid',
+      updatedAt: Date.now() - 3600000,
+      note: 'Đoàn quen, hẹn thanh toán sau khi về'
+    },
+    {
+      id: 'bill_demo_paid',
+      code: 'HD' + String(Date.now() - 7200000).slice(-7),
+      date: day,
+      time: '10:30',
+      stallId: 's3',
+      stallName: 'Sạp 03',
+      customer: 'Gia đình chị Lan',
+      phone: '0912 345 678',
+      items: [
+        { id: 'p1', name: 'Gà nướng mắc khén', unit: 'con', qty: 1, price: 350000 },
+        { id: 'p8', name: 'Bia Hà Nội', unit: 'lon', qty: 5, price: 18000 },
+        { id: 'p9', name: 'Nước suối lạnh', unit: 'chai', qty: 3, price: 10000 }
+      ],
+      subtotal: 470000,
+      rent: 300000,
+      advance: 0,
+      discount: 0,
+      deposit: 200000,
+      revenue: 770000,
+      due: 570000,
+      refund: 0,
+      pay: 'Chuyển khoản',
+      cashAmount: 0,
+      qrAmount: 570000,
+      debtStatus: 'none',
+      updatedAt: Date.now() - 7200000,
+      note: 'Quét VietQR đủ'
+    }
+  ];
+
+  // Setup Drink Inventory
+  db.drinkInventory = db.drinkInventory || {};
+  db.drinkInventory[day] = {
+    'p8': { start: 24, actual: 9 }, // Start 24, Sold 15 (5 Lan + 10 Debt) -> exp 9 -> actual 9 (Khớp!)
+    'p9': { start: 30, actual: 27 } // Start 30, Sold 3 -> exp 27 -> actual 27 (Khớp!)
+  };
+
+  save();
+  renderHome();
+  playKitchenChime();
+  alert('🎉 ĐÃ NẠP THÀNH CÔNG DỮ LIỆU MẪU 10 TÌNH HUỐNG!\n\n' +
+        '1. Sạp 01: Đang ngồi (Đoàn anh Tuấn 12 người, Cọc 500k, Xe ôm 50k, Đồ ăn & Bia)\n' +
+        '   👉 Bấm vào Sạp 01 để bấm [🧾 Tạm tính], [🔀 Chuyển sạp] hoặc [⚡ Thanh toán]!\n' +
+        '2. Sạp 02: Khách anh Hải đang uống bia\n' +
+        '3. Nút [🧊 Kiểm Kê Tủ Lạnh]: Xem bảng đối chiếu bia nước ngọt khớp 100%\n' +
+        '4. Nút [📒 Sổ Nợ Khách Hàng]: Xem đơn nợ 990k của anh Tuấn (Công an huyện)\n' +
+        '5. Khi muốn xóa để bán thật: Bấm [🧹 Xóa trắng bán thật]!');
+}
+
+function resetToEmptySelling() {
+  if (!confirm('Bạn muốn xóa toàn bộ dữ liệu test mẫu để bắt đầu bán hàng thực tế?')) return;
+  db.stalls.forEach(s => {
+    s.status = 'empty';
+    s.name = s.baseName || s.name;
+    s.order = { items: {}, kitchen: {} };
+  });
+  db.bills = [];
+  db.drinkInventory = {};
+  save();
+  renderHome();
+  alert('Đã đưa tất cả sạp về TRỐNG sẵn sàng đón khách thật!');
+}
+
 </script>
   <div id="toastUndo" style="display:none;position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.3);z-index:9999;align-items:center;gap:10px;font-size:13px">
     <span id="toastMsg">Thông báo</span>
