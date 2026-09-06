@@ -1,0 +1,25 @@
+THÁC DÊ CAMPING V14 FINAL — QA REPORT
+
+STATIC & STRUCTURAL QA
+- HTML Syntax & Valid tags: PASS
+- Duplicate HTML IDs: 0 (PASS)
+- Total Referenced IDs in JS: 153
+- Missing Referenced IDs: 0 (PASS)
+- HTML UI Handlers checked: 87
+- Missing UI Handler functions: 0 (PASS)
+- Duplicate named functions: 0 (PASS)
+- PWA Service Worker (v14 cache): PASS
+- Web App Manifest (Theme #15803d): PASS
+
+FEATURE VALIDATION
+- Giao diện Modern Minimalist POS (Theme Forest Green & Amber): PASS
+- Sơ đồ sạp Floor Plan Grid với bộ lọc trạng thái (Tất cả, Đang ngồi, Trống, Đặt trước): PASS
+- POS Order nhanh với tìm kiếm & phân loại (Nướng, Xào & Hấp, Đồ uống, Khác): PASS
+- Tích hợp VietQR động (chuẩn NAPAS/VietQR.io tự sinh theo số tiền bill & nội dung chuyển khoản): PASS
+- Điều phối Bếp (KDS) 2 chế độ (Theo từng sạp + Tổng hợp theo món) kèm âm báo Web Audio Chime: PASS
+- Phiếu chi vận hành với gợi ý nhanh (Than, Đá, Gas, Gia vị, Vệ sinh) và xuất Ảnh/PDF/CSV: PASS
+- Quản lý Dòng tiền thực tế (Sổ quỹ tiền mặt & Người ứng tiền túi luân chuyển qua các ngày): PASS
+- Báo cáo chốt ngày (Day Settlement) với snapshot khóa sổ, in A4, xuất Ảnh & CSV: PASS
+- Đồng bộ Cloud đa thiết bị tùy chọn (Firebase Realtime Database) song song chế độ Local-first: PASS
+
+TEST EXECUTION RESULT: PASS 100%
