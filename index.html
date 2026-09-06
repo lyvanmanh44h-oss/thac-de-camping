@@ -565,7 +565,7 @@
       margin: 0 auto;
       background: rgba(15, 23, 42, 0.96);
       backdrop-filter: blur(10px);
-      padding: 10px 14px 12px;
+      padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
       display: none;
       align-items: center;
       justify-content: space-between;
@@ -1049,7 +1049,7 @@
       </div>
       <div style="display:flex;gap:6px">
         <button class="btn secondary" onclick="openMoveMergeModal()">🔀 Chuyển/Gộp</button>
-        <button class="btn secondary" onclick="show('home')">← Quay lại sạp</button>
+        <button class="btn secondary" onclick="saveOpenOrder()">← Quay lại sạp</button>
       </div>
     </div>
 
@@ -1121,11 +1121,14 @@
         <div style="font-size:11px;color:rgba(255,255,255,0.85);font-weight:700">CÒN PHẢI THU (ĐÃ TRỪ CỌC)</div>
         <div style="font-size:18px;font-weight:900;color:#fef08a" id="stickyDue">0 ₫</div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button type="button" onclick="openPrecheckModal()" style="background:#f59e0b;color:#fff;border:0;border-radius:10px;padding:9px 13px;font-weight:800;font-size:13px;display:flex;align-items:center;gap:4px">
+      <div style="display:flex;gap:7px">
+        <button type="button" onclick="saveOpenOrder()" style="background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px;display:flex;align-items:center;gap:4px">
+          💾 Lưu
+        </button>
+        <button type="button" onclick="openPrecheckModal()" style="background:#f59e0b;color:#fff;border:0;border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px;display:flex;align-items:center;gap:4px">
           🧾 Tạm tính
         </button>
-        <button type="button" onclick="openCheckoutConfirm()" style="background:#22c55e;color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:900;font-size:14px;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(34,197,94,0.4)">
+        <button type="button" onclick="openCheckoutConfirm()" style="background:#22c55e;color:#fff;border:0;border-radius:10px;padding:9px 14px;font-weight:900;font-size:14px;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(34,197,94,0.4)">
           ⚡ Thanh toán
         </button>
       </div>
@@ -1990,6 +1993,8 @@ function show(id, btn) {
   $(id).classList.add('on');
   const stickyBar = $('stickyOrderBar');
   if (stickyBar) stickyBar.style.display = (id === 'order') ? 'flex' : 'none';
+  const nav = document.querySelector('.nav');
+  if (nav) nav.style.display = (id === 'order') ? 'none' : 'grid';
   if (btn) {
     document.querySelectorAll('.nav button').forEach(x => x.classList.remove('on'));
     btn.classList.add('on');
@@ -2274,6 +2279,7 @@ function quickAddAdvancePrompt() {
     if (s) {
       s.order = s.order || {};
       s.order.advance = num;
+      if (s.status === 'empty') s.status = 'using';
       save();
     }
     renderCart();
@@ -2358,6 +2364,7 @@ function qchg(id, d) {
   if (s.order.items[id] <= 0) {
     delete s.order.items[id];
     delete s.order.kitchen[id];
+    if (s.order.customPrices) delete s.order.customPrices[id];
   } else {
     let k = s.order.kitchen[id] || (s.order.kitchen[id] = { status: 'pending', served: 0, units: [] });
     if (!Array.isArray(k.units)) k.units = [];
@@ -2452,7 +2459,8 @@ function saveOpenOrder() {
   s.order.rentChoice = $('rentChoice').value;
   s.order.rentAmount = Math.max(0, +$('rentAmount').value || 0);
   if (!s.order.startTime) s.order.startTime = Date.now();
-  if (s.status === 'empty') s.status = 'using';
+  const hasContent = Object.keys(s.order.items || {}).length > 0 || !!s.order.customer || s.order.deposit > 0 || s.order.advance > 0;
+  if (s.status === 'empty' && hasContent) s.status = 'using';
   save();
   show('home');
 }
@@ -3388,6 +3396,10 @@ function executeMoveMerge() {
     }
     if (s.order.note) {
       target.order.note = target.order.note ? `${target.order.note} | ${s.order.note}` : s.order.note;
+    }
+    if (s.order.customPrices) {
+      target.order.customPrices = target.order.customPrices || {};
+      Object.assign(target.order.customPrices, s.order.customPrices);
     }
     target.status = 'using';
   }
@@ -4334,8 +4346,25 @@ function rawDayData(day) {
   const operating = expenses.reduce((a, x) => a + (+x.amount || 0), 0);
   const investment = investments.reduce((a, x) => a + (+x.amount || 0), 0);
   const profit = revenue - purchaseCost - operating;
-  const cash = bills.filter(b => b.pay === 'Tiền mặt').reduce((a, b) => a + (+b.due || 0), 0);
-  const transfer = bills.filter(b => b.pay === 'Chuyển khoản').reduce((a, b) => a + (+b.due || 0), 0);
+  let cash = bills.reduce((a, b) => {
+    if (b.pay === 'Tiền mặt') return a + (+b.due || 0);
+    if (b.pay === 'Kết hợp') return a + (+b.cashAmount || 0);
+    return a;
+  }, 0);
+  let transfer = bills.reduce((a, b) => {
+    if (b.pay === 'Chuyển khoản') return a + (+b.due || 0);
+    if (b.pay === 'Kết hợp') return a + (+b.qrAmount || 0);
+    return a;
+  }, 0);
+  const debtCollected = (db.bills || []).filter(b => b.paidDate === day && b.date !== day && b.debtStatus === 'paid');
+  debtCollected.forEach(b => {
+    if (b.pay === 'Tiền mặt') cash += (+b.due || 0);
+    else if (b.pay === 'Chuyển khoản') transfer += (+b.due || 0);
+    else if (b.pay === 'Kết hợp') {
+      cash += (+b.cashAmount || 0);
+      transfer += (+b.qrAmount || 0);
+    }
+  });
   const deposits = bills.reduce((a, b) => a + (+b.deposit || 0), 0);
   const contributors = {};
   purchases.forEach(x => (x.contributors || []).forEach(c => contributors[c.person] = (contributors[c.person] || 0) + (+c.amount || 0)));
