@@ -489,6 +489,31 @@
     .btn.amber { background: #fef3c7; color: #b45309; }
     .btn.red { background: #fee2e2; color: #b91c1c; }
     .btn.dark { background: #0f172a; color: #fff; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .quick-chip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 12px;
+      background: #fff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .quick-chip-btn:hover {
+      background: #f0fdf4;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .quick-chip-btn:active {
+      transform: scale(0.96);
+    }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
 
     input, select, textarea {
@@ -777,6 +802,22 @@
         padding: 10mm !important;
         border: 0 !important;
       }
+
+      body.print-precheck * { visibility: hidden !important; }
+      body.print-precheck #precheckSlip, body.print-precheck #precheckSlip * { visibility: visible !important; }
+      body.print-precheck #precheckSlip {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 72mm !important;
+        max-width: 72mm !important;
+        margin: 0 auto !important;
+        border: 0 !important;
+        background: #fff !important;
+        display: block !important;
+        padding: 0 !important;
+        break-inside: avoid !important;
+      }
     }
 
     /* Settlement & Reports */
@@ -910,7 +951,28 @@
           <span id="customerMini" class="badge badge-reserved" style="display:none"></span>
         </div>
       </div>
-      <button class="btn secondary" onclick="show('home')">← Quay lại sạp</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn secondary" onclick="openMoveMergeModal()">🔀 Chuyển/Gộp</button>
+        <button class="btn secondary" onclick="show('home')">← Quay lại sạp</button>
+      </div>
+    </div>
+
+    <!-- Quick 1-Touch Bar (Drinks & Services) -->
+    <div class="quick-add-wrap" style="background:#fff;padding:9px 12px;border-radius:12px;border:1px solid var(--border);margin-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:800;color:var(--primary)">⚡ BẮN NHANH 1-CHẠM (ĐỒ UỐNG & DỊCH VỤ):</span>
+        <span style="font-size:11px;color:var(--muted)">Chạm là cộng ngay vào đơn</span>
+      </div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p8')">🍺 +1 Bia HN</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p9')">💧 +1 Suối</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_da')">🧊 +1 Xô đá</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_redbull')">⚡ +1 Bò Húc</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddAdvancePrompt()">🛵 + Chi hộ xe ôm</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_phuthu')">🍱 + Phụ thu đồ ngoài</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_bep')">🔥 + Thuê bếp than</button>
+        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_than')">🪵 + Than thêm</button>
+      </div>
     </div>
 
     <!-- Product Category Tabs & Search -->
@@ -923,6 +985,7 @@
       <button class="pill" onclick="filterCategory('nuong', this)">🔥 Món nướng</button>
       <button class="pill" onclick="filterCategory('xao_hap', this)">🥘 Xào & Hấp</button>
       <button class="pill" onclick="filterCategory('uong', this)">🍺 Đồ uống</button>
+      <button class="pill" onclick="filterCategory('dich_vu', this)">🏕️ Dịch vụ & Phụ thu</button>
     </div>
 
     <div id="productPicker" class="products"></div>
@@ -943,8 +1006,9 @@
           <option value="none">Không tính tiền sạp</option>
         </select>
         <input id="rentAmount" type="number" placeholder="Tiền sạp (₫)" oninput="renderCart()">
+        <input id="depositOrder" type="number" placeholder="Tiền cọc đã nhận (₫)" oninput="renderCart()">
+        <input id="advanceOrder" type="number" placeholder="Chi hộ xe ôm/thuyền (₫)" oninput="renderCart()">
         <input id="discount" type="number" placeholder="Giảm giá (₫)" oninput="renderCart()">
-        <input id="depositOrder" type="number" placeholder="Tiền cọc đã nhận" oninput="renderCart()">
         <select id="pay">
           <option value="Chuyển khoản">Chuyển khoản (VietQR)</option>
           <option value="Tiền mặt">Tiền mặt</option>
@@ -957,13 +1021,15 @@
       <div class="cart-sum">
         <div class="line"><span>Tiền món:</span><span id="sub">0 ₫</span></div>
         <div class="line"><span>Tiền thuê sạp:</span><span id="rentSum">0 ₫</span></div>
+        <div class="line" id="lineAdvance" style="display:none"><span>🛵 Chi hộ xe ôm/thuyền:</span><span id="adv">0 ₫</span></div>
         <div class="line"><span>Giảm giá:</span><span id="dis">0 ₫</span></div>
         <div class="line"><span>Đã cọc:</span><span id="dep">0 ₫</span></div>
         <div class="line grand"><span>CÒN THANH TOÁN:</span><b id="due">0 ₫</b></div>
       </div>
 
-      <div class="grid2" style="margin-top:12px">
-        <button class="btn secondary" onclick="saveOpenOrder()">💾 Lưu đơn sạp</button>
+      <div class="grid3" style="margin-top:12px">
+        <button class="btn secondary" onclick="saveOpenOrder()">💾 Lưu đơn</button>
+        <button class="btn amber" onclick="openPrecheckModal()">🧾 Tạm tính</button>
         <button class="btn primary" onclick="openCheckoutConfirm()">⚡ Thanh toán</button>
       </div>
     </div>
@@ -1158,6 +1224,21 @@
     </select>
   </div>
 
+  <!-- Checkout Split QR Selector -->
+  <div style="margin:10px 0 6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:11px;font-weight:700;color:var(--muted)">CHIA TIỀN TẠI QUẦY:</span>
+    </div>
+    <div class="filter-pills" id="checkoutSplitPills">
+      <button class="pill on" onclick="setCheckoutSplit(1, this)">Cả bàn</button>
+      <button class="pill" onclick="setCheckoutSplit(2, this)">Chia 2</button>
+      <button class="pill" onclick="setCheckoutSplit(3, this)">Chia 3</button>
+      <button class="pill" onclick="setCheckoutSplit(4, this)">Chia 4</button>
+      <button class="pill" onclick="setCheckoutSplit(5, this)">Chia 5</button>
+      <button class="pill" onclick="setCheckoutSplit(6, this)">Chia 6</button>
+    </div>
+  </div>
+
   <!-- Dynamic VietQR Payment Box -->
   <div id="checkoutQRBox" class="vietqr-card" style="display:none">
     <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;margin-bottom:8px">Quét mã để chuyển khoản chính xác</div>
@@ -1178,6 +1259,69 @@
   <div class="grid2" style="margin-top:14px">
     <button class="btn secondary" onclick="closeM('checkoutConfirmModal')">Sửa lại bill</button>
     <button class="btn primary" onclick="confirmCheckout()">✅ Hoàn tất & In bill</button>
+  </div>
+</div></div>
+
+<!-- MODAL: MOVE & MERGE STALL -->
+<div id="moveMergeModal" class="modal"><div class="sheet" style="max-width:440px">
+  <div class="titlebar">
+    <div>
+      <div class="title" id="moveMergeTitle">Chuyển hoặc Gộp Sạp</div>
+      <div style="font-size:11px;color:var(--muted)">Đổi sạp tránh mưa/nắng hoặc nhập đoàn khách</div>
+    </div>
+    <button class="close-x" onclick="closeM('moveMergeModal')">✕</button>
+  </div>
+  <div style="margin:12px 0">
+    <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px">Chọn sạp đích muốn chuyển hoặc gộp đến:</label>
+    <select id="targetStallSelect" onchange="updateMoveMergePreview()"></select>
+  </div>
+  <div id="moveMergePreview" class="box" style="padding:12px;font-size:12px;background:#f8fafc;margin-bottom:12px;line-height:1.5"></div>
+  <div class="grid2">
+    <button class="btn secondary" onclick="closeM('moveMergeModal')">Hủy</button>
+    <button id="btnConfirmMoveMerge" class="btn primary" onclick="executeMoveMerge()">Thực hiện</button>
+  </div>
+</div></div>
+
+<!-- MODAL: PRECHECK BILL & SPLIT BILL -->
+<div id="precheckModal" class="modal"><div class="sheet" style="max-width:440px">
+  <div class="titlebar">
+    <div>
+      <div class="title">Phiếu Tạm Tính</div>
+      <div style="font-size:11px;color:var(--muted)">Kiểm tra trước khi thanh toán / Chia tiền nhóm</div>
+    </div>
+    <button class="close-x" onclick="closeM('precheckModal')">✕</button>
+  </div>
+
+  <!-- Precheck Thermal Slip Content -->
+  <div id="precheckSlip" class="receipt" style="margin:8px 0 12px;box-shadow:none;border:1px dashed #cbd5e1"></div>
+
+  <!-- Split Bill Tool Box -->
+  <div class="box" style="padding:12px;background:#f0fdf4;border-color:#bbf7d0;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:800;color:#15803d">👥 CHIA TIỀN NHÓM BẠN (SPLIT QR):</span>
+      <span id="splitPricetag" style="font-size:13px;font-weight:800;color:#15803d"></span>
+    </div>
+    <div style="font-size:11px;color:#475569;margin-bottom:6px">Chọn số người trong nhóm để chia đều số tiền:</div>
+    <div class="filter-pills" id="splitCountPills" style="margin-bottom:8px">
+      <button class="pill on" onclick="setSplitCount(1, this)">1 người (Cả bàn)</button>
+      <button class="pill" onclick="setSplitCount(2, this)">2 người</button>
+      <button class="pill" onclick="setSplitCount(3, this)">3</button>
+      <button class="pill" onclick="setSplitCount(4, this)">4</button>
+      <button class="pill" onclick="setSplitCount(5, this)">5</button>
+      <button class="pill" onclick="setSplitCount(6, this)">6</button>
+      <button class="pill" onclick="setSplitCount(8, this)">8</button>
+      <button class="pill" onclick="setSplitCount(10, this)">10</button>
+    </div>
+    <div id="splitQRWrap" style="display:none;text-align:center;padding:8px 0;border-top:1px dashed #86efac;margin-top:6px">
+      <img id="splitQRImg" src="" style="max-width:140px;border-radius:8px;background:#fff;padding:4px;border:1px solid #bbf7d0">
+      <div id="splitQRMemo" style="font-size:11px;color:#166534;font-weight:700;margin-top:4px"></div>
+      <div style="font-size:10px;color:#64748b">Quý khách quét mã trên để chuyển đúng phần của mình</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <button class="btn secondary" onclick="printPrecheck()">🖨️ In Tạm Tính</button>
+    <button class="btn primary" onclick="closeM('precheckModal');openCheckoutConfirm()">⚡ Tiếp Tục Thanh Toán</button>
   </div>
 </div></div>
 
@@ -1326,6 +1470,7 @@
       <button class="pill" onclick="quickAddExpenseItem('Bình Gas', 1, 'bình', 380000)">Gas</button>
       <button class="pill" onclick="quickAddExpenseItem('Rau củ gia vị', 1, 'lô', 150000)">Rau củ</button>
       <button class="pill" onclick="quickAddExpenseItem('Túi rác & dọn dẹp', 1, 'gói', 50000)">Vệ sinh</button>
+      <button class="pill" onclick="quickAddExpenseItem('Hoa hồng xe ôm/bác tài dẫn đoàn', 1, 'đoàn', 100000)">🛵 Hoa hồng xe ôm/tài xế</button>
     </div>
 
     <div style="font-weight:800;margin-bottom:6px">Chi tiết các khoản trong phiếu:</div>
@@ -1542,7 +1687,14 @@ const SEED = {
     {"id": "p6", "name": "Rau rừng xào tỏi", "unit": "đĩa", "price": 50000, "icon": "🥬", "category": "xao_hap", "image": ""},
     {"id": "p7", "name": "Măng nứa xào thịt", "unit": "đĩa", "price": 65000, "icon": "🥘", "category": "xao_hap", "image": ""},
     {"id": "p8", "name": "Bia Hà Nội", "unit": "lon", "price": 18000, "icon": "🍺", "category": "uong", "image": ""},
-    {"id": "p9", "name": "Nước suối lạnh", "unit": "chai", "price": 10000, "icon": "💧", "category": "uong", "image": ""}
+    {"id": "p9", "name": "Nước suối lạnh", "unit": "chai", "price": 10000, "icon": "💧", "category": "uong", "image": ""},
+    {"id": "p_da", "name": "Xô đá lạnh", "unit": "xô", "price": 20000, "icon": "🧊", "category": "uong", "image": ""},
+    {"id": "p_redbull", "name": "Nước tăng lực Bò Húc", "unit": "lon", "price": 15000, "icon": "⚡", "category": "uong", "image": ""},
+    {"id": "p_phuthu", "name": "Phụ thu mang đồ ngoài", "unit": "lượt", "price": 100000, "icon": "🍱", "category": "dich_vu", "image": ""},
+    {"id": "p_bep", "name": "Thuê bếp nướng than", "unit": "chiếc", "price": 50000, "icon": "🔥", "category": "dich_vu", "image": ""},
+    {"id": "p_sup", "name": "Thuê ván SUP / Phao", "unit": "bộ", "price": 50000, "icon": "🏄", "category": "dich_vu", "image": ""},
+    {"id": "p_loa", "name": "Thuê loa kéo di động", "unit": "chiếc", "price": 150000, "icon": "🎤", "category": "dich_vu", "image": ""},
+    {"id": "p_than", "name": "Túi than hoa thêm", "unit": "túi", "price": 20000, "icon": "🪵", "category": "dich_vu", "image": ""}
   ],
   "bills": [],
   "purchases": [],
@@ -1568,6 +1720,18 @@ let db = JSON.parse(localStorage.getItem(KEY) || 'null') || SEED;
 // Backward migrations & safety
 db.stalls = db.stalls || SEED.stalls;
 db.products = db.products || SEED.products;
+const DEFAULT_EXTRA_PRODUCTS = [
+  {"id": "p_da", "name": "Xô đá lạnh", "unit": "xô", "price": 20000, "icon": "🧊", "category": "uong", "image": ""},
+  {"id": "p_redbull", "name": "Nước tăng lực Bò Húc", "unit": "lon", "price": 15000, "icon": "⚡", "category": "uong", "image": ""},
+  {"id": "p_phuthu", "name": "Phụ thu mang đồ ngoài", "unit": "lượt", "price": 100000, "icon": "🍱", "category": "dich_vu", "image": ""},
+  {"id": "p_bep", "name": "Thuê bếp nướng than", "unit": "chiếc", "price": 50000, "icon": "🔥", "category": "dich_vu", "image": ""},
+  {"id": "p_sup", "name": "Thuê ván SUP / Phao", "unit": "bộ", "price": 50000, "icon": "🏄", "category": "dich_vu", "image": ""},
+  {"id": "p_loa", "name": "Thuê loa kéo di động", "unit": "chiếc", "price": 150000, "icon": "🎤", "category": "dich_vu", "image": ""},
+  {"id": "p_than", "name": "Túi than hoa thêm", "unit": "túi", "price": 20000, "icon": "🪵", "category": "dich_vu", "image": ""}
+];
+DEFAULT_EXTRA_PRODUCTS.forEach(ep => {
+  if (!db.products.some(p => p.id === ep.id)) db.products.push(ep);
+});
 db.bills = db.bills || [];
 db.purchases = db.purchases || [];
 db.expenses = db.expenses || [];
@@ -1743,6 +1907,10 @@ function renderHome() {
           </div>
           <div class="stall-amount">${z.qty > 0 ? money(z.sub) : 'Trống món'}</div>
           ${s.order?.customer ? `<div class="stall-meta" style="font-weight:750">👤 ${esc(s.order.customer)}</div>` : ''}
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+            ${s.order?.deposit ? `<span class="badge badge-reserved" style="font-size:10px">💰 Cọc: ${money(s.order.deposit)}</span>` : ''}
+            ${s.order?.advance ? `<span class="badge" style="font-size:10px;background:#dbeafe;color:#1e40af">🛵 Chi hộ: ${money(s.order.advance)}</span>` : ''}
+          </div>
         </div>
         <div class="stall-foot">
           <span class="stall-meta">${z.qty > 0 ? z.qty + ' món' : 'Chưa có bill'}</span>
@@ -1768,6 +1936,7 @@ function openStall(id) {
 
   $('customerOrder').value = s.order.customer || '';
   $('depositOrder').value = s.order.deposit || '';
+  $('advanceOrder').value = s.order.advance || '';
   $('orderNote').value = s.order.note || '';
   $('pay').value = s.order.pay || 'Chuyển khoản';
   $('discount').value = s.order.discount || '';
@@ -1813,6 +1982,35 @@ function renderProductPicker() {
       </div>
     </div>
   `).join('') : '<div class="wide center" style="padding:20px;color:var(--muted)">Không tìm thấy món phù hợp</div>';
+}
+
+
+function quickAddDrink(id) {
+  let p = prod(id);
+  if (!p) {
+    let ep = DEFAULT_EXTRA_PRODUCTS.find(x => x.id === id);
+    if (ep) {
+      db.products.push(ep);
+      save();
+    }
+  }
+  addItem(id);
+}
+
+function quickAddAdvancePrompt() {
+  let curr = +$('advanceOrder').value || 0;
+  let val = prompt('Quán ứng tiền trả hộ Xe ôm / Thuyền / Vận chuyển cho khách (₫):\n(Khoản này sẽ cộng vào bill khách và tự hoàn về quỹ khi thanh toán)', curr ? String(curr + 50000) : '50000');
+  if (val !== null && val.trim() !== '') {
+    let num = Math.max(0, +val || 0);
+    $('advanceOrder').value = num;
+    let s = stall(currentStall);
+    if (s) {
+      s.order = s.order || {};
+      s.order.advance = num;
+      save();
+    }
+    renderCart();
+  }
 }
 
 function addItem(id) {
@@ -1905,12 +2103,15 @@ function renderCart() {
   let rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
   let dis = Math.max(0, +$('discount').value || 0);
   let dep = Math.max(0, +$('depositOrder').value || 0);
-  let due = Math.max(0, sub + rent - dis - dep);
+  let adv = Math.max(0, +$('advanceOrder').value || 0);
+  let due = Math.max(0, sub + rent + adv - dis - dep);
 
   $('sub').textContent = money(sub);
   $('rentSum').textContent = money(rent);
   $('dis').textContent = money(dis);
   $('dep').textContent = money(dep);
+  $('adv').textContent = money(adv);
+  $('lineAdvance').style.display = adv > 0 ? 'flex' : 'none';
   $('due').textContent = money(due);
 }
 
@@ -1919,6 +2120,7 @@ function saveOpenOrder() {
   if (!s) return;
   s.order.customer = $('customerOrder').value.trim();
   s.order.deposit = +$('depositOrder').value || 0;
+  s.order.advance = +$('advanceOrder').value || 0;
   s.order.note = $('orderNote').value;
   s.order.pay = $('pay').value;
   s.order.discount = +$('discount').value || 0;
@@ -2184,7 +2386,8 @@ function openCheckoutConfirm() {
   let rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
   let dis = Math.max(0, +$('discount').value || 0);
   let dep = Math.max(0, +$('depositOrder').value || 0);
-  let total = Math.max(0, t.sub + rent - dis);
+  let adv = Math.max(0, +$('advanceOrder').value || 0);
+  let total = Math.max(0, t.sub + rent + adv - dis);
   let due = Math.max(0, total - dep);
 
   $('confirmPay').value = $('pay').value;
@@ -2192,16 +2395,26 @@ function openCheckoutConfirm() {
     <div class="row"><span>Sạp & Khách:</span><b>${esc(s.name)}${$('customerOrder').value.trim() ? ' · ' + esc($('customerOrder').value.trim()) : ''}</b></div>
     <div class="row"><span>Tiền món:</span><b>${money(t.sub)}</b></div>
     <div class="row"><span>Tiền sạp:</span><b>${money(rent)}</b></div>
+    ${adv ? `<div class="row"><span>🛵 Chi hộ xe ôm/thuyền:</span><b style="color:#1e40af">+${money(adv)}</b></div>` : ''}
     ${dis ? `<div class="row"><span>Giảm giá:</span><b>-${money(dis)}</b></div>` : ''}
     ${dep ? `<div class="row"><span>Đã cọc:</span><b>-${money(dep)}</b></div>` : ''}
     <div class="row" style="font-size:16px"><span><b>CÒN THANH TOÁN:</b></span><b style="color:var(--primary);font-size:18px">${money(due)}</b></div>
   `;
 
-  toggleCheckoutQR();
+  if ($('checkoutSplitPills')) {
+    document.querySelectorAll('#checkoutSplitPills button').forEach((b, idx) => b.className = 'pill' + (idx === 0 ? ' on' : ''));
+  }
+  toggleCheckoutQR(1);
   $('checkoutConfirmModal').style.display = 'flex';
 }
 
-function toggleCheckoutQR() {
+function setCheckoutSplit(count, btn) {
+  document.querySelectorAll('#checkoutSplitPills button').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  toggleCheckoutQR(count);
+}
+
+function toggleCheckoutQR(splitCount = 1) {
   const payType = $('confirmPay').value;
   const box = $('checkoutQRBox');
   if (payType === 'Chuyển khoản') {
@@ -2210,20 +2423,23 @@ function toggleCheckoutQR() {
     let rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
     let dis = Math.max(0, +$('discount').value || 0);
     let dep = Math.max(0, +$('depositOrder').value || 0);
-    let due = Math.max(0, t.sub + rent - dis - dep);
+    let adv = Math.max(0, +$('advanceOrder').value || 0);
+    let due = Math.max(0, t.sub + rent + adv - dis - dep);
+    
+    let qrAmount = splitCount > 1 ? Math.ceil(due / splitCount) : due;
 
     const bank = db.settings.bank || 'MB';
     const acc = db.settings.account || '0906068198';
     const owner = db.settings.owner || 'THAC DE';
-    const memo = `THACDE ${s.name.replace(/\s+/g, '')}`;
+    const memo = `THACDE ${s.name.replace(/\s+/g, '')}${splitCount > 1 ? ' CHIA' + splitCount : ''}`;
 
     $('qrBankName').textContent = bank;
     $('qrBankAcc').textContent = acc;
     $('qrBankOwner').textContent = owner;
-    $('qrAmount').textContent = money(due);
+    $('qrAmount').textContent = splitCount > 1 ? `${money(qrAmount)} / người (${splitCount} người)` : money(qrAmount);
     $('qrMemo').textContent = memo;
 
-    const qrUrl = `https://img.vietqr.io/image/${bank}-${acc}-compact2.png?amount=${due}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(owner)}`;
+    const qrUrl = `https://img.vietqr.io/image/${bank}-${acc}-compact2.png?amount=${qrAmount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(owner)}`;
     $('checkoutQRImg').src = qrUrl;
     box.style.display = 'block';
   } else {
@@ -2247,8 +2463,9 @@ function finalizeCheckout() {
   let rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
   let dis = Math.max(0, +$('discount').value || 0);
   let dep = Math.max(0, +$('depositOrder').value || 0);
+  let adv = Math.max(0, +$('advanceOrder').value || 0);
   let rev = Math.max(0, t.sub + rent - dis);
-  let due = Math.max(0, rev - dep);
+  let due = Math.max(0, rev + adv - dep);
 
   let items = Object.entries(s.order.items).map(([id, q]) => {
     let p = prod(id);
@@ -2268,6 +2485,7 @@ function finalizeCheckout() {
     subtotal: t.sub,
     rent,
     rentChoice: $('rentChoice').value,
+    advance: adv,
     discount: dis,
     deposit: dep,
     revenue: rev,
@@ -2317,6 +2535,7 @@ function showReceipt(b) {
     <div class="dash"></div>
     <div class="r"><span>Tiền món:</span><span>${money(b.subtotal)}</span></div>
     ${b.rent ? `<div class="r"><span>Tiền sạp (${b.rentChoice === 'large' ? 'Sạp to' : b.rentChoice === 'small' ? 'Sạp bé' : ''}):</span><span>${money(b.rent)}</span></div>` : ''}
+    ${b.advance ? `<div class="r"><span>🛵 Chi hộ xe ôm/thuyền:</span><span style="font-weight:700;color:#1e40af">+${money(b.advance)}</span></div>` : ''}
     ${b.discount ? `<div class="r"><span>Giảm giá:</span><span>-${money(b.discount)}</span></div>` : ''}
     ${b.deposit ? `<div class="r"><span>Đã cọc:</span><span>-${money(b.deposit)}</span></div>` : ''}
     <div class="r total"><span>CÒN TRẢ:</span><span>${money(b.due)}</span></div>
@@ -2330,6 +2549,216 @@ function showReceipt(b) {
     </div>
   `;
   $('receiptModal').style.display = 'flex';
+}
+
+
+// ==================== CHUYỂN SẠP & GỘP SẠP (V15) ====================
+function openMoveMergeModal() {
+  const s = stall(currentStall);
+  if (!s) return alert('Chưa chọn sạp.');
+  const otherStalls = db.stalls.filter(x => x.id !== s.id);
+  if (!otherStalls.length) return alert('Không có sạp khác để chuyển hoặc gộp.');
+  
+  $('moveMergeTitle').textContent = `Chuyển hoặc Gộp: ${s.name}`;
+  $('targetStallSelect').innerHTML = otherStalls.map(t => {
+    const isEmp = !Object.keys(t.order?.items || {}).length && t.status === 'empty';
+    return `<option value="${t.id}">${esc(t.name)} (${isEmp ? 'Trống' : 'Đang ngồi: ' + (orderTotals(t).qty + ' món')})</option>`;
+  }).join('');
+  
+  updateMoveMergePreview();
+  $('moveMergeModal').style.display = 'flex';
+}
+
+function updateMoveMergePreview() {
+  const s = stall(currentStall);
+  const targetId = $('targetStallSelect').value;
+  const target = stall(targetId);
+  if (!s || !target) return;
+  
+  const targetHasItems = Object.keys(target.order?.items || {}).length > 0;
+  const btn = $('btnConfirmMoveMerge');
+  const box = $('moveMergePreview');
+  
+  if (!targetHasItems) {
+    btn.textContent = '➡️ Chuyển sang ' + target.name;
+    btn.className = 'btn primary';
+    box.innerHTML = `
+      <div style="font-weight:700;color:var(--primary);margin-bottom:4px">Chế độ: CHUYỂN SẠP</div>
+      <div>Toàn bộ món ăn, cọc (<b>${money(s.order?.deposit || 0)}</b>), chi hộ (<b>${money(s.order?.advance || 0)}</b>), và ghi chú từ <b>${esc(s.name)}</b> sẽ được chuyển sang <b>${esc(target.name)}</b>.</div>
+      <div style="margin-top:4px;color:var(--muted)">Sạp ${esc(s.name)} sẽ trở về trạng thái <b>TRỐNG</b> để đón khách mới.</div>
+    `;
+  } else {
+    btn.textContent = '🔀 Gộp vào ' + target.name;
+    btn.className = 'btn amber';
+    box.innerHTML = `
+      <div style="font-weight:700;color:var(--accent);margin-bottom:4px">Chế độ: GỘP SẠP (Nhập đoàn)</div>
+      <div>Dồn chung toàn bộ món ăn và tiền cọc từ <b>${esc(s.name)}</b> vào hóa đơn của <b>${esc(target.name)}</b>.</div>
+      <div style="margin-top:4px;color:var(--muted)">Sạp ${esc(s.name)} sẽ giải phóng thành <b>TRỐNG</b>. Khách sẽ thanh toán chung tại ${esc(target.name)}.</div>
+    `;
+  }
+}
+
+function executeMoveMerge() {
+  const s = stall(currentStall);
+  const targetId = $('targetStallSelect').value;
+  const target = stall(targetId);
+  if (!s || !target) return;
+  
+  target.order = target.order || { items: {}, kitchen: {} };
+  target.order.items = target.order.items || {};
+  target.order.kitchen = target.order.kitchen || {};
+  
+  const targetHasItems = Object.keys(target.order.items).length > 0;
+  
+  if (!targetHasItems) {
+    target.order = JSON.parse(JSON.stringify(s.order));
+    target.status = 'using';
+  } else {
+    Object.entries(s.order.items || {}).forEach(([pid, q]) => {
+      target.order.items[pid] = (target.order.items[pid] || 0) + (+q || 0);
+      let tk = getKitchenState(target, pid);
+      let sk = s.order.kitchen?.[pid];
+      if (sk && Array.isArray(sk.units)) {
+        sk.units.forEach(u => tk.units.push(Boolean(u)));
+        tk.served = tk.units.filter(Boolean).length;
+        tk.status = tk.served >= target.order.items[pid] ? 'served' : tk.served > 0 ? 'cooking' : 'pending';
+      }
+    });
+    target.order.deposit = (+target.order.deposit || 0) + (+s.order.deposit || 0);
+    target.order.advance = (+target.order.advance || 0) + (+s.order.advance || 0);
+    if (s.order.customer) {
+      target.order.customer = target.order.customer ? `${target.order.customer} + ${s.order.customer}` : s.order.customer;
+    }
+    if (s.order.note) {
+      target.order.note = target.order.note ? `${target.order.note} | ${s.order.note}` : s.order.note;
+    }
+    target.status = 'using';
+  }
+  
+  s.order = { items: {}, kitchen: {} };
+  s.status = 'empty';
+  s.name = s.baseName || s.name;
+  
+  closeM('moveMergeModal');
+  save();
+  playKitchenChime();
+  alert(`Đã ${!targetHasItems ? 'chuyển' : 'gộp'} thành công sang ${target.name}!`);
+  openStall(target.id);
+}
+
+// ==================== TẠM TÍNH & CHIA TIỀN NHÓM (V15) ====================
+let currentSplitCount = 1;
+
+function openPrecheckModal() {
+  const s = stall(currentStall);
+  if (!s) return alert('Chưa chọn sạp.');
+  currentSplitCount = 1;
+  document.querySelectorAll('#splitCountPills button').forEach((b, idx) => {
+    b.className = 'pill' + (idx === 0 ? ' on' : '');
+  });
+  renderPrecheckSlip();
+  $('precheckModal').style.display = 'flex';
+}
+
+function renderPrecheckSlip() {
+  const s = stall(currentStall);
+  if (!s) return;
+  const t = orderTotals(s);
+  const rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
+  const dis = Math.max(0, +$('discount').value || 0);
+  const dep = Math.max(0, +$('depositOrder').value || 0);
+  const adv = Math.max(0, +$('advanceOrder').value || 0);
+  const total = Math.max(0, t.sub + rent + adv - dis);
+  const due = Math.max(0, total - dep);
+
+  const itemsHtml = Object.entries(s.order?.items || {}).map(([id, q]) => {
+    let p = prod(id);
+    if (!p) return '';
+    let k = getKitchenState(s, id);
+    return `
+      <div class="r">
+        <span>${esc(p.name)} × ${q} ${esc(p.unit)}</span>
+        <b>${money(p.price * q)}</b>
+      </div>
+      <div style="font-size:10px;color:var(--muted);padding-left:8px;margin-bottom:2px">
+        ${k.served >= q ? '✓ Đã lên đủ' : ('🍳 Đang nấu (' + k.served + '/' + q + ')')}
+      </div>
+    `;
+  }).join('');
+
+  $('precheckSlip').innerHTML = `
+    <h2>THÁC DÊ CAMPING</h2>
+    <div style="text-align:center">
+      <div style="font-weight:800;color:var(--accent);font-size:13px;letter-spacing:1px">PHIẾU TẠM TÍNH</div>
+      <div style="font-size:11px;color:#64748b">${new Date().toLocaleDateString('vi-VN')} · ${new Date().toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit'})}</div>
+      <b style="font-size:13px">${esc(s.name)}${$('customerOrder').value.trim() ? ' · ' + esc($('customerOrder').value.trim()) : ''}</b>
+    </div>
+    <div class="dash"></div>
+    ${itemsHtml || '<div style="text-align:center;padding:10px;color:var(--muted)">Chưa có món nào</div>'}
+    <div class="dash"></div>
+    <div class="r"><span>Tiền món:</span><span>${money(t.sub)}</span></div>
+    ${rent ? `<div class="r"><span>Tiền thuê sạp:</span><span>${money(rent)}</span></div>` : ''}
+    ${adv ? `<div class="r"><span>🛵 Chi hộ xe ôm/thuyền:</span><span style="font-weight:700;color:#1e40af">+${money(adv)}</span></div>` : ''}
+    ${dis ? `<div class="r"><span>Giảm giá:</span><span>-${money(dis)}</span></div>` : ''}
+    ${dep ? `<div class="r"><span>Đã cọc trước:</span><span style="font-weight:700;color:var(--primary)">-${money(dep)}</span></div>` : ''}
+    <div class="r total"><span>CẦN THANH TOÁN:</span><span>${money(due)}</span></div>
+    <div class="dash"></div>
+    <div style="text-align:center;font-size:11px;color:#64748b;font-style:italic">
+      Quý khách vui lòng kiểm tra danh sách món trước khi thanh toán.
+    </div>
+  `;
+
+  updateSplitView(due);
+}
+
+function setSplitCount(count, btn) {
+  currentSplitCount = count;
+  document.querySelectorAll('#splitCountPills button').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  
+  const s = stall(currentStall);
+  const t = orderTotals(s);
+  const rent = $('rentChoice').value === 'none' ? 0 : Math.max(0, +$('rentAmount').value || 0);
+  const dis = Math.max(0, +$('discount').value || 0);
+  const dep = Math.max(0, +$('depositOrder').value || 0);
+  const adv = Math.max(0, +$('advanceOrder').value || 0);
+  const due = Math.max(0, t.sub + rent + adv - dis - dep);
+  updateSplitView(due);
+}
+
+function updateSplitView(due) {
+  const count = currentSplitCount;
+  const tag = $('splitPricetag');
+  const wrap = $('splitQRWrap');
+  const img = $('splitQRImg');
+  const memoEl = $('splitQRMemo');
+  
+  if (count <= 1) {
+    tag.textContent = money(due);
+    wrap.style.display = 'none';
+    return;
+  }
+  
+  const perPerson = Math.ceil(due / count);
+  tag.textContent = `${money(perPerson)} / người (${count} người)`;
+  
+  const s = stall(currentStall);
+  const bank = db.settings.bank || 'MB';
+  const acc = db.settings.account || '0906068198';
+  const owner = db.settings.owner || 'THAC DE';
+  const memo = `THACDE ${s.name.replace(/\s+/g, '')} CHIA${count}`;
+  
+  const qrUrl = `https://img.vietqr.io/image/${bank}-${acc}-compact2.png?amount=${perPerson}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(owner)}`;
+  img.src = qrUrl;
+  memoEl.textContent = `${money(perPerson)} · Quét VietQR (${bank} - ${acc})`;
+  wrap.style.display = 'block';
+}
+
+function printPrecheck() {
+  document.body.classList.remove('print-day');
+  document.body.classList.add('print-precheck');
+  window.print();
+  setTimeout(() => document.body.classList.remove('print-precheck'), 800);
 }
 
 function printReceipt() {
