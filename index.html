@@ -490,106 +490,69 @@
     .btn.red { background: #fee2e2; color: #b91c1c; }
     .btn.dark { background: #0f172a; color: #fff; }
     .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    .quick-chip-btn {
+    .quick-scroll-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px 8px;
+      margin: 8px 0 6px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .quick-scroll-bar::-webkit-scrollbar { display: none; }
+    .quick-pill {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      padding: 7px 12px;
+      padding: 7px 13px;
       background: #fff;
       border: 1.5px solid #cbd5e1;
       border-radius: 20px;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 750;
       color: #1e293b;
       cursor: pointer;
       white-space: nowrap;
-      transition: all 0.15s ease;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.15s ease;
+      flex-shrink: 0;
     }
-    .quick-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 6px 10px;
-      gap: 8px;
+    .quick-pill:active {
+      transform: scale(0.95);
+      background: #f1f5f9;
     }
-    .quick-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 750;
-      color: #334155;
-      min-width: 140px;
-    }
-    .quick-count {
-      font-size: 11px;
-      padding: 1px 6px;
-      border-radius: 12px;
-      background: #e2e8f0;
-      color: #475569;
-    }
-    .quick-count.has-qty {
-      background: #fef08a;
-      color: #854d0e;
-      font-weight: 800;
-    }
-    .quick-count.has-qty-blue {
-      background: #dbeafe;
-      color: #1e40af;
-      font-weight: 800;
-    }
-    .quick-count.has-qty-green {
-      background: #dcfce7;
-      color: #166534;
-      font-weight: 800;
-    }
-    .quick-actions {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .btn-chip {
-      padding: 5px 9px;
-      font-size: 11px;
-      font-weight: 800;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      color: #0f172a;
-      cursor: pointer;
-      min-width: 34px;
-      text-align: center;
-      transition: all 0.12s;
-    }
-    .btn-chip:active {
-      transform: scale(0.94);
-      background: #e2e8f0;
-    }
-    .btn-chip.highlight {
-      background: #fef3c7;
-      border-color: #f59e0b;
-      color: #92400e;
-    }
-    .btn-chip.sub {
-      background: #fee2e2;
-      border-color: #fca5a5;
-      color: #991b1b;
-    }
-    .btn-chip.blue {
+    .quick-pill.blue {
       background: #eff6ff;
       border-color: #93c5fd;
       color: #1e40af;
     }
-    .btn-chip.green {
-      background: #f0fdf4;
-      border-color: #86efac;
-      color: #166534;
+    .quick-pill.amber {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .qty-input {
+      width: 44px;
+      height: 28px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 800;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 0;
+      color: #0f172a;
+    }
+    .qty-input:focus {
+      outline: 2px solid var(--primary);
+      border-color: var(--primary);
+    }
+    .editable-price {
+      cursor: pointer;
+      color: var(--primary);
+      text-decoration: underline dashed;
+      text-underline-offset: 3px;
+      font-weight: 750;
     }
 
     /* Sticky Bottom Checkout Bar */
@@ -1090,8 +1053,17 @@
       </div>
     </div>
 
-    <!-- Quick 1-Touch Bar (Drinks & Services) -->
-    <div id="quickChipsStation" class="quick-add-wrap" style="background:#fff;padding:10px 12px;border-radius:14px;border:1.5px solid var(--border);margin-top:10px;box-shadow:var(--shadow-sm)"></div>
+    <!-- Quick 1-Touch Bar (Tối giản 1 hàng ngang, siêu gọn gàng) -->
+    <div class="quick-scroll-bar">
+      <button type="button" class="quick-pill" onclick="quickAddDrink('p8')">🍺 +1 Bia HN</button>
+      <button type="button" class="quick-pill" onclick="quickAddDrink('p9')">💧 +1 Suối</button>
+      <button type="button" class="quick-pill" onclick="quickAddDrink('p_da')">🧊 +1 Xô đá</button>
+      <button type="button" class="quick-pill" onclick="quickAddDrink('p_redbull')">⚡ +1 Bò Húc</button>
+      <button type="button" class="quick-pill blue" onclick="quickAddAdvancePrompt()">🛵 + Chi hộ xe ôm</button>
+      <button type="button" class="quick-pill amber" onclick="quickAddDrink('p_bep')">🔥 + Bếp than</button>
+      <button type="button" class="quick-pill amber" onclick="quickAddDrink('p_than')">🪵 + Than thêm</button>
+      <button type="button" class="quick-pill" onclick="quickAddDrink('p_phuthu')">🍱 + Đồ ngoài</button>
+    </div>
 
     <!-- Product Category Tabs & Search -->
     <div class="product-search-wrap" style="margin-top:10px">
@@ -2050,9 +2022,13 @@ function openMore() { $('moreModal').style.display = 'flex'; }
 // Stalls & Floor Plan
 function orderTotals(s) {
   let sub = 0, qty = 0;
-  Object.entries(s.order?.items || {}).forEach(([id, q]) => {
+  Object.entries(s?.order?.items || {}).forEach(([id, q]) => {
     let p = prod(id);
-    if (p) { sub += (+p.price || 0) * (+q || 0); qty += +q || 0; }
+    if (p) {
+      let price = s?.order?.customPrices?.[id] ?? (+p.price || 0);
+      sub += price * (+q || 0);
+      qty += +q || 0;
+    }
   });
   return { sub, qty };
 }
@@ -2292,35 +2268,9 @@ function quickAddDrink(id, qty = 1) {
   if (s.status === 'empty') s.status = 'using';
   save();
   renderCart();
-  renderQuickChipsBar();
   playKitchenChime();
   if (navigator.vibrate) navigator.vibrate(35);
-  showToast(`✓ +${qty} ${p?.name || 'món'} (Tổng: ${s.order.items[id]} ${p?.unit || ''})`);
-}
-
-function quickSubtractDrink(id, qty = 1) {
-  let s = stall(currentStall);
-  if (!s || !s.order?.items?.[id]) return;
-  qchg(id, -qty);
-  renderQuickChipsBar();
-  let p = prod(id);
-  showToast(`−${qty} ${p?.name || 'món'} (Còn: ${s.order?.items?.[id] || 0} ${p?.unit || ''})`);
-}
-
-function quickAddAdvance(amt) {
-  let s = stall(currentStall);
-  if (!s) return;
-  s.order = s.order || {};
-  let current = Math.max(0, +$('advanceOrder').value || +s.order.advance || 0);
-  let next = current + amt;
-  s.order.advance = next;
-  $('advanceOrder').value = next;
-  save();
-  renderCart();
-  renderQuickChipsBar();
-  playKitchenChime();
-  if (navigator.vibrate) navigator.vibrate(35);
-  showToast(`🛵 +${money(amt)} chi hộ xe ôm (Tổng: ${money(next)})`);
+  showToast(`✓ +${qty} ${p?.name || 'món'}`);
 }
 
 function quickAddAdvancePrompt() {
@@ -2336,147 +2286,54 @@ function quickAddAdvancePrompt() {
       save();
     }
     renderCart();
-    renderQuickChipsBar();
     showToast(`🛵 Chi hộ xe ôm: ${money(num)}`);
   }
 }
 
-function quickAddDeposit(amt) {
-  let s = stall(currentStall);
+function renderQuickChipsBar() {
+  // Kept for backward compatibility
+}
+
+function setQty(id, val) {
+  const s = stall(currentStall);
   if (!s) return;
   s.order = s.order || {};
-  let current = Math.max(0, +$('depositOrder').value || +s.order.deposit || 0);
-  let next = current + amt;
-  s.order.deposit = next;
-  $('depositOrder').value = next;
+  s.order.items = s.order.items || {};
+  s.order.kitchen = s.order.kitchen || {};
+  let q = Math.max(0, parseInt(val, 10) || 0);
+  if (q <= 0) {
+    delete s.order.items[id];
+    delete s.order.kitchen[id];
+    if (s.order.customPrices) delete s.order.customPrices[id];
+  } else {
+    s.order.items[id] = q;
+    let k = s.order.kitchen[id] || (s.order.kitchen[id] = { status: 'pending', served: 0, units: [] });
+    if (!Array.isArray(k.units)) k.units = [];
+    while (k.units.length < q) k.units.push(false);
+    if (k.units.length > q) k.units = k.units.slice(0, q);
+    getKitchenState(s, id);
+  }
   save();
   renderCart();
-  renderQuickChipsBar();
-  playKitchenChime();
-  if (navigator.vibrate) navigator.vibrate(35);
-  showToast(`💰 +${money(amt)} cọc tiền (Tổng cọc: ${money(next)})`);
 }
 
-function renderQuickChipsBar() {
+function editItemPrice(id) {
   const s = stall(currentStall);
-  const items = s?.order?.items || {};
-  const el = $('quickChipsStation');
-  if (!el) return;
-
-  const biaQty = items['p8'] || 0;
-  const suoiQty = items['p9'] || 0;
-  const daQty = items['p_da'] || 0;
-  const boHucQty = items['p_redbull'] || 0;
-  const tigerQty = items['p_tiger'] || 0;
-  const advAmt = Math.max(0, +$('advanceOrder')?.value || +s?.order?.advance || 0);
-  const depAmt = Math.max(0, +$('depositOrder')?.value || +s?.order?.deposit || 0);
-
-  el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-size:12px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:5px">
-        <span>⚡ TRẠM BẮN BIA ĐÁ & DỊCH VỤ SIÊU TỐC</span>
-      </div>
-      <span style="font-size:11px;color:var(--muted)">1 chạm cộng ngay vào bill</span>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:7px">
-      
-      <!-- Bia Hà Nội -->
-      <div class="quick-row">
-        <div class="quick-label">
-          <span>🍺 Bia Hà Nội (18k)</span>
-          <b class="quick-count ${biaQty > 0 ? 'has-qty' : ''}">${biaQty} lon</b>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p8', 1)">+1</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p8', 5)">+5</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p8', 10)">+10</button>
-          <button type="button" class="btn-chip highlight" onclick="quickAddDrink('p8', 24)">+Két 24</button>
-          ${biaQty > 0 ? `<button type="button" class="btn-chip sub" onclick="quickSubtractDrink('p8', 1)" title="Khách trả lại 1 lon">−1</button>` : ''}
-        </div>
-      </div>
-
-      <!-- Xô Đá Lạnh -->
-      <div class="quick-row">
-        <div class="quick-label">
-          <span>🧊 Xô đá lạnh (20k)</span>
-          <b class="quick-count ${daQty > 0 ? 'has-qty' : ''}">${daQty} xô</b>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p_da', 1)">+1</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p_da', 2)">+2</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p_da', 3)">+3</button>
-          ${daQty > 0 ? `<button type="button" class="btn-chip sub" onclick="quickSubtractDrink('p_da', 1)">−1</button>` : ''}
-        </div>
-      </div>
-
-      <!-- Nước Suối Lạnh -->
-      <div class="quick-row">
-        <div class="quick-label">
-          <span>💧 Nước suối (10k)</span>
-          <b class="quick-count ${suoiQty > 0 ? 'has-qty' : ''}">${suoiQty} chai</b>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p9', 1)">+1</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p9', 3)">+3</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p9', 6)">+6</button>
-          <button type="button" class="btn-chip highlight" onclick="quickAddDrink('p9', 12)">+Lốc 12</button>
-          ${suoiQty > 0 ? `<button type="button" class="btn-chip sub" onclick="quickSubtractDrink('p9', 1)">−1</button>` : ''}
-        </div>
-      </div>
-
-      <!-- Bò Húc & Nước Ngọt -->
-      <div class="quick-row">
-        <div class="quick-label">
-          <span>⚡ Bò húc / Nước ngọt</span>
-          <b class="quick-count ${boHucQty > 0 ? 'has-qty' : ''}">${boHucQty} lon</b>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p_redbull', 1)">+1 Bò Húc</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p_coca', 1)">+1 Coca</button>
-          <button type="button" class="btn-chip" onclick="quickAddDrink('p_tiger', 1)">+1 Tiger</button>
-        </div>
-      </div>
-
-      <!-- Xe Ôm Chi Hộ -->
-      <div class="quick-row" style="background:#eff6ff;border-color:#bfdbfe">
-        <div class="quick-label" style="color:#1e40af">
-          <span>🛵 Chi hộ xe ôm:</span>
-          <b class="quick-count ${advAmt > 0 ? 'has-qty-blue' : ''}">${money(advAmt)}</b>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-chip blue" onclick="quickAddAdvance(50000)">+50k</button>
-          <button type="button" class="btn-chip blue" onclick="quickAddAdvance(100000)">+100k</button>
-          <button type="button" class="btn-chip blue" onclick="quickAddAdvance(200000)">+200k</button>
-          <button type="button" class="btn-chip" onclick="quickAddAdvancePrompt()">Tùy gõ</button>
-        </div>
-      </div>
-
-      <!-- Tiền Cọc Đã Nhận -->
-      <div class="quick-row" style="background:#f0fdf4;border-color:#bbf7d0">
-        <div class="quick-label" style="color:#166534">
-          <span>💰 Cọc nhận trước:</span>
-          <b class="quick-count ${depAmt > 0 ? 'has-qty-green' : ''}">${money(depAmt)}</b>
-        </div>
-        <div class="quick-actions">
-          <button type="button" class="btn-chip green" onclick="quickAddDeposit(200000)">+200k</button>
-          <button type="button" class="btn-chip green" onclick="quickAddDeposit(500000)">+500k</button>
-          <button type="button" class="btn-chip green" onclick="quickAddDeposit(1000000)">+1tr</button>
-        </div>
-      </div>
-
-      <!-- Dịch vụ cắm trại phụ -->
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-top:4px">
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_bep', 1)">🔥 + Thuê bếp than (50k)</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_than', 1)">🪵 + Than thêm (20k)</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_phuthu', 1)">🍱 + Phụ thu đồ ngoài (100k)</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_sup', 1)">🏄 + Thuê SUP (50k)</button>
-        <button type="button" class="quick-chip-btn" onclick="quickAddDrink('p_loa', 1)">🎤 + Loa kéo (150k)</button>
-      </div>
-
-    </div>
-  `;
+  if (!s) return;
+  const p = prod(id);
+  if (!p) return;
+  s.order.customPrices = s.order.customPrices || {};
+  let currentPrice = s.order.customPrices[id] ?? p.price;
+  let val = prompt(`Chỉnh giá món "${p.name}" cho đơn ${s.name} (₫):`, currentPrice);
+  if (val !== null && val.trim() !== '') {
+    let newPrice = Math.max(0, parseInt(val.replace(/[^0-9]/g, ''), 10) || 0);
+    s.order.customPrices[id] = newPrice;
+    save();
+    renderCart();
+    showToast(`✓ Đã đổi giá ${p.name}: ${money(newPrice)}`);
+  }
 }
+
 
 
 function addItem(id) {
@@ -2550,20 +2407,26 @@ function renderCart() {
     let p = prod(id);
     if (!p) return '';
     let q = s.order.items[id];
-    sub += p.price * q;
+    let price = s.order?.customPrices?.[id] ?? p.price;
+    sub += price * q;
     let k = getKitchenState(s, id);
     let statusText = k.served >= q ? '✓ Đã lên đủ' : `🍳 Đã lên ${k.served}/${q}`;
     return `
       <div class="row">
         <div style="flex:1">
-          <b style="font-size:13px">${esc(p.name)}</b>
-          <div class="stall-meta">${money(p.price)} × ${q} ${esc(p.unit)} = <b>${money(p.price * q)}</b></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <b style="font-size:13px">${esc(p.name)}</b>
+            <button type="button" onclick="editItemPrice('${id}')" style="background:none;border:0;padding:2px;font-size:11px;color:var(--muted);cursor:pointer" title="Chỉnh giá món này">✏️</button>
+          </div>
+          <div class="stall-meta">
+            <span class="editable-price" onclick="editItemPrice('${id}')" title="Bấm để sửa giá">${money(price)}</span> × ${q} ${esc(p.unit)} = <b>${money(price * q)}</b>
+          </div>
           <div style="font-size:11px;color:${k.served >= q ? 'var(--primary)' : 'var(--accent)'};font-weight:750">${statusText}</div>
         </div>
         <div class="qty-stepper">
-          <button onclick="qchg('${id}',-1)">−</button>
-          <b>${q}</b>
-          <button onclick="qchg('${id}',1)">+</button>
+          <button type="button" onclick="qchg('${id}',-1)">−</button>
+          <input type="number" min="0" value="${q}" class="qty-input" onchange="setQty('${id}', this.value)" onfocus="this.select()" title="Gõ trực tiếp số lượng">
+          <button type="button" onclick="qchg('${id}',1)">+</button>
         </div>
       </div>`;
   }).join('') : '<div style="padding:22px;text-align:center;color:var(--muted)">Chưa có món nào được chọn</div>';
@@ -3044,7 +2907,8 @@ function finalizeCheckout() {
 
   let items = Object.entries(s.order.items).map(([id, q]) => {
     let p = prod(id);
-    return { id: p?.id || id, name: p?.name || 'Món đã xóa', unit: p?.unit || 'phần', qty: +q || 0, price: +(p?.price || 0) };
+    let price = s.order?.customPrices?.[id] ?? (+p?.price || 0);
+    return { id: p?.id || id, name: p?.name || 'Món đã xóa', unit: p?.unit || 'phần', qty: +q || 0, price };
   });
 
   let b = {
@@ -3576,11 +3440,12 @@ function renderPrecheckSlip() {
   const itemsHtml = Object.entries(s.order?.items || {}).map(([id, q]) => {
     let p = prod(id);
     if (!p) return '';
+    let price = s.order?.customPrices?.[id] ?? p.price;
     let k = getKitchenState(s, id);
     return `
       <div class="r">
         <span>${esc(p.name)} × ${q} ${esc(p.unit)}</span>
-        <b>${money(p.price * q)}</b>
+        <b>${money(price * q)}</b>
       </div>
       <div style="font-size:10px;color:var(--muted);padding-left:8px;margin-bottom:2px">
         ${k.served >= q ? '✓ Đã lên đủ' : ('🍳 Đang nấu (' + k.served + '/' + q + ')')}
